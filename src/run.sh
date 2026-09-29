@@ -11,7 +11,7 @@ if [ ! -d "$SKILL_DIR/node_modules/cheerio" ]; then
     npm install --prefix "$SKILL_DIR" --no-audit --no-fund --silent
 fi
 
-SAVE_HTML_DIR="$SKILL_DIR/../scripts/save-html"
+SAVE_HTML_DIR="$SKILL_DIR/../save-html"
 if [ ! -d "$SAVE_HTML_DIR/node_modules/playwright-core" ]; then
     npm install --prefix "$SAVE_HTML_DIR" --no-audit --no-fund --silent
 fi

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { loadSerp, renderedPath } from '../scripts/serp-source.mjs';
+import { loadSerp, renderedPath } from '../src/serp-source.mjs';
 
 const url = 'https://www.google.com/search?q=%D8%AA%D8%AD%D8%B3%D9%8A%D9%86&gl=eg&hl=ar&num=10';
 const interstitial = await readFile(new URL('./fixtures/google-enablejs.html', import.meta.url));

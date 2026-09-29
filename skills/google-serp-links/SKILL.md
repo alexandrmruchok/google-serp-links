@@ -5,7 +5,7 @@ description: Extract Google organic URLs for keywords or SERP URLs with a determ
 
 Use the script; do not parse or invent SERP results with the model.
 
-From the repository root:
+From the shared workspace containing both repositories under `scripts/`:
 
 ```bash
 bash scripts/google-serp-links/run.sh --country it --lang it "keyword 1" "keyword 2"

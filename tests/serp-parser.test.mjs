@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { inspectHtml, parseSerpHtml } from '../scripts/serp-parser.mjs';
-import { assessGooglePage } from '../scripts/serp-source.mjs';
+import { inspectHtml, parseSerpHtml } from '../src/serp-parser.mjs';
+import { assessGooglePage } from '../src/serp-source.mjs';
 
 const pageUrl = 'https://www.google.com/search?q=test&gl=eg&hl=ar&num=10';
 const captured = await readFile(new URL('./fixtures/google-enablejs.html', import.meta.url), 'utf8');
@@ -94,7 +94,7 @@ test('unknown pages fail explicitly; recognized empty SERPs remain empty', () =>
 test('both CLI entry points save raw bytes and metadata before reporting interstitial errors', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'serp-regression-'));
     try {
-        for (const entry of ['../scripts/serp-links.mjs', '../../scripts/google-serp-links/serp-links.mjs']) {
+        for (const entry of ['../src/serp-links.mjs', '../serp-links.mjs']) {
             const debugFile = join(directory, 'google-debug.html');
             const run = spawnSync(process.execPath, [
                 '--import', new URL('./mock-fetch.mjs', import.meta.url).href,

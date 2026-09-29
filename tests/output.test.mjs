@@ -20,7 +20,7 @@ test('CLI outputs only URL strings in mixed-heading SERP order, retaining first 
         <a href="https://z.example/first"><h3>Duplicate first</h3></a>
         <h3><a href="/url?q=https%3A%2F%2Fm.example%2Fthird">M third</a></h3>`);
     const expected = ['https://z.example/first', 'https://a.example/second', 'https://m.example/third'];
-    for (const entry of ['../scripts/serp-links.mjs', '../../scripts/google-serp-links/serp-links.mjs']) {
+    for (const entry of ['../src/serp-links.mjs', '../serp-links.mjs']) {
         const run = extra => {
             const processResult = spawnSync(process.execPath, [
                 '--import', new URL('./mock-fetch.mjs', import.meta.url).href,

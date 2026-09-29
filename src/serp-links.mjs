@@ -1,5 +1,5 @@
 import { isGoogleHost } from "./serp-parser.mjs";
-import { createBrowserLoader } from "../../scripts/save-html/save-html.mjs";
+import { createBrowserLoader } from "../../save-html/save-html.mjs";
 import { loadSerp } from "./serp-source.mjs";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile } from "node:fs/promises";

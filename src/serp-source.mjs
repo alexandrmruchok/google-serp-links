@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { fetchHtml, renderHtml } from '../../scripts/save-html/save-html.mjs';
+import { fetchHtml, renderHtml } from '../../save-html/save-html.mjs';
 import { inspectHtml, parseSerpHtml } from './serp-parser.mjs';
 
 export function renderedPath(path) {

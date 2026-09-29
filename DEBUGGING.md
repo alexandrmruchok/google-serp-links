@@ -2,10 +2,10 @@
 
 For a Russian user guide with setup, commands, and output examples, see [README.md](README.md).
 
-From the workspace root:
+From the shared workspace containing both repositories under scripts/:
 
 ```powershell
-npm --prefix ./google-serp-links install
+npm --prefix ./scripts/google-serp-links install
 npm --prefix ./scripts/save-html install
 node ./scripts/google-serp-links/serp-links.mjs --country eg --lang ar --details --debug-html google-debug.html --output google-results.jsonl 'تحسين جودة الصورة'
 ```
@@ -78,8 +78,8 @@ implementation.
 ## Tests
 
 ```powershell
-node --test google-serp-links/tests/*.test.mjs scripts/save-html/tests/*.test.mjs
-node --test google-serp-links/tests/browser.integration.mjs scripts/save-html/tests/browser.integration.mjs
+node --test scripts/google-serp-links/tests/*.test.mjs scripts/save-html/tests/*.test.mjs
+node --test scripts/google-serp-links/tests/browser.integration.mjs scripts/save-html/tests/browser.integration.mjs
 ```
 
 The browser tests use installed Chrome and local HTTP pages, including JavaScript

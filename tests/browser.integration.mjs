@@ -4,8 +4,8 @@ import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { createBrowserLoader } from '../scripts/serp-browser.mjs';
-import { loadSerp, renderedPath } from '../scripts/serp-source.mjs';
+import { createBrowserLoader } from '../src/serp-browser.mjs';
+import { loadSerp, renderedPath } from '../src/serp-source.mjs';
 
 for (const transport of ['browser', 'auto']) {
 test(`real Chrome executes delayed JavaScript and saves results: ${transport}`, async t => {
