@@ -1,0 +1,18 @@
+# Only the parser, its launchers, skills, and documentation belong to this repo.
+/*
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/google-serp-links/
+!/scripts/
+!/skills/
+
+/scripts/*
+!/scripts/google-serp-links/
+/scripts/save-html/
+
+/skills/*
+!/skills/google-serp-links/
+
+node_modules/
+.browser-profile/
