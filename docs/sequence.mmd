@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor User as Пользователь
+    participant SERP as google-serp-links
+    participant HTML as save-html
+
+    User->>SERP: Запустить поиск: запросы или URL выдачи
+    SERP->>HTML: Загрузить страницу поисковой выдачи по URL
+    alt Успешная загрузка
+        HTML-->>SERP: HTML страницы и сведения о загрузке
+    else Ошибка загрузки
+        HTML-->>SERP: Сведения об ошибке или исключение
+        Note over SERP: Ошибка запроса включается в результат<br/>Обработка пачки продолжается
+    end
+    SERP-->>User: Результаты поиска / ошибки запросов

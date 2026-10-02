@@ -38,7 +38,7 @@ test(`real Chrome executes delayed JavaScript and saves results: ${transport}`, 
     const url = `http://127.0.0.1:${server.address().port}${query}`;
     const debugHtml = join(directory, 'debug', 'google.html');
     const results = await loadSerp(url, { transport, headless: true, debugHtml, browser, log() {} });
-    assert.deepEqual(results, [{ position: 1, url: 'https://example.org/ar', title: 'تحسين جودة الصورة', domain: 'example.org' }]);
+    assert.deepEqual(results, [{ url: 'https://example.org/ar', title: 'تحسين جودة الصورة', domain: 'example.org' }]);
     assert.equal(requests.filter(path => path === query).length, transport === 'auto' ? 2 : 1);
     if (transport === 'auto') assert.equal(await readFile(debugHtml, 'utf8'), html);
     const output = transport === 'auto' ? renderedPath(debugHtml) : debugHtml;

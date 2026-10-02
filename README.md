@@ -2,7 +2,41 @@
 
 Скрипт собирает ссылки из органической выдачи Google по поисковым запросам или готовым адресам страниц поиска. Результат можно посмотреть в терминале или сохранить в файл.
 
-Ссылки идут в порядке выдачи. Повторяющиеся URL внутри одного запроса удаляются: остаётся первое вхождение. Заголовки страниц, описания и позиции отдельными полями не сохраняются.
+Ссылки идут в порядке выдачи. Повторяющиеся URL внутри одного запроса удаляются: остаётся первое вхождение. В обычном режиме заголовки и описания не сохраняются; для них используйте `--compact`.
+
+## Компактный формат для оценки software intent
+
+Для передачи данных классификатору используйте `--compact`. Остальная часть README описывает обычные режимы со списками URL.
+
+Скрипт извлекает факты о выдаче, а классификатор на следующем этапе решает, относится ли запрос к программному обеспечению. Скрипт не вычисляет `is_software` или `software_score` и не вызывает LLM. Для одного результата доступны полный `title`, конечный `url`, непустой `snippet` и `result_type`, если тип можно надёжно распознать. Порядок элементов массива уже задаёт ранжирование, поэтому отдельное поле `position` не добавляется. Повторные URL сохраняются только один раз, по первому вхождению. Путь и параметры целевого URL сохраняются, Google redirect-wrapper раскрывается. Отдельное поле `domain` не нужно.
+
+Обычный режим с `keyword`/`urls`, режим `--details` с `country`/`language`/`num` и список `--urls-only` сохраняют свои существующие форматы. `--compact` возвращает одну минимизированную строку JSON на выдачу. В нём вместо `keyword` используется `query`, а в `results` находятся объекты результатов. Например, обычный вывод и компактный вывод одного запроса:
+
+```json
+{"keyword":"photo quality enhancer","urls":["https://example.com/tools/photo-enhancer"]}
+```
+
+```powershell
+node ./scripts/google-serp-links/serp-links.mjs --compact --country it --lang it "photo quality enhancer"
+```
+
+```json
+{"query":"photo quality enhancer","shopping_present":true,"results":[{"title":"AI Photo Enhancer","url":"https://example.com/tools/photo-enhancer","snippet":"Enhance image quality online with AI...","result_type":"organic"}]}
+```
+
+`shopping_present` и `local_pack_present` относятся ко всей выдаче. Они появляются только при уверенном обнаружении соответствующих блоков; их содержимое не сохраняется. Отсутствующие признаки и необязательные поля результата опускаются: без пустых строк, `null` и пустых массивов. Неизвестный `result_type` не угадывается. Допустимые распознанные типы могут включать `organic`, `video`, `app`, `shopping` и `other`.
+
+`snippet` нормализуется: переносы и повторные пробелы заменяются одним пробелом, пробелы по краям удаляются. Обычный короткий текст сохраняется полностью, необычно длинный ограничивается примерно 250–300 символами без повреждения Unicode. Заголовок не обрезается. В компактный вывод не попадают `country`, `language`, `domain`, HTML, breadcrumbs, изображения, рейтинги, sitelinks, People Also Ask, related searches, реклама и содержимое Shopping или Local Pack. Полный HTML допускается только в отдельном диагностическом файле по явному `--debug-html`; в результатах его нет.
+
+`--limit N` задаёт максимум первых результатов, от 1 до 100; по умолчанию 10. Если `--num` не задан явно, скрипт также запрашивает у Google `N` результатов. При одновременном использовании `--num` управляет запросом к Google, а `--limit` ограничивает вывод. Для готового URL выдачи параметры поиска остаются из URL, а `--limit` только ограничивает вывод. `--urls-only` продолжает выводить только URL, даже вместе с `--compact`. Для нескольких запросов `--compact` выводит JSONL: одна SERP на строку, без внешнего массива и pretty-printing. Пример:
+
+```jsonl
+{"query":"photo quality enhancer","results":[{"title":"AI Photo Enhancer","url":"https://example.com/tools/photo-enhancer","snippet":"Enhance image quality online with AI...","result_type":"organic"}]}
+{"query":"buy camera","shopping_present":true,"results":[{"title":"Camera shop","url":"https://example.org/cameras","result_type":"organic"}]}
+{"query":"photo studio near me","local_pack_present":true,"results":[{"title":"Studio directory","url":"https://example.net/studios","result_type":"organic"}]}
+```
+
+Проверить контракт можно командой `node --test tests/intent-contract.test.mjs` из папки репозитория.
 
 ## 1. Подготовка
 
@@ -191,9 +225,11 @@ node ./scripts/google-serp-links/serp-links.mjs --details "https://www.google.co
 | `--country CC` | Страна поиска, например `it`, `eg`, `tr`; также `--gl` | Не задана |
 | `--lang LL` | Язык Google, например `it`, `ar`, `ru`; также `--hl` | Не задан |
 | `--num N` | Максимум ссылок, от 1 до 100 | 10 |
+| `--limit N` | Максимум результатов в выводе, от 1 до 100; для обычного запроса также задаёт `num`, если `--num` не указан | Не задан |
 | `--input-file FILE` | Файл запросов TXT или TSV; `-` для стандартного ввода | Запросы из команды |
 | `--output FILE` | Сохранить JSONL в файл | Вывод в терминал |
 | `--details` | Добавить параметры запроса; ссылки в поле `results` | Ссылки в поле `urls` |
+| `--compact` | Компактные данные выдачи для классификатора: `query`, признаки выдачи и объекты `results` | Выключен |
 | `--urls-only` | Вывести только URL по одному на строку | Выключен |
 | `--browser-channel msedge` | Использовать установленный Edge | `chrome` |
 | `--timeout MS` | Время ожидания готовности страницы в миллисекундах | 30000 — 30 секунд |

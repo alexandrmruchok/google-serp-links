@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { fetchHtml, renderHtml } from '../../save-html/save-html.mjs';
-import { inspectHtml, parseSerpHtml } from './serp-parser.mjs';
+import { inspectHtml, parseSerpData, parseSerpHtml } from './serp-parser.mjs';
 
 export function renderedPath(path) {
     const extension = extname(path);
@@ -18,7 +18,7 @@ export function assessGooglePage(page) {
 }
 
 export async function loadSerp(inputUrl, { transport = 'browser', debugHtml,
-    timeout = 30000, manualTimeout = 300000, headless = false, browser,
+    timeout = 30000, manualTimeout = 300000, headless = false, browser, structured = false,
     log = message => process.stderr.write(message + '\n') } = {}) {
     const url = new URL(inputUrl);
     const language = url.searchParams.get('hl') || 'en';
@@ -47,7 +47,9 @@ export async function loadSerp(inputUrl, { transport = 'browser', debugHtml,
         if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(page.contentType || '')) {
             throw new Error('google-unexpected-content-type');
         }
-        return parseSerpHtml(page.html, page.url, diagnostics);
+        return structured
+            ? parseSerpData(page.html, page.url, diagnostics)
+            : parseSerpHtml(page.html, page.url, diagnostics);
     }
 
     if (transport !== 'browser') {

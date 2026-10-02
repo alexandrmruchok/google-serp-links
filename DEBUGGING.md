@@ -23,6 +23,12 @@ Duplicate URLs keep their first occurrence. The default schema uses `urls`;
 Neither schema includes position, title, or domain for individual results.
 `--urls-only` prints one URL per line in the same order.
 
+`--compact` emits one minified JSON object per SERP, with `query`, present
+Shopping/Local Pack flags, and result objects containing `title`,
+`url`, optional normalized `snippet`, and a reliable `result_type` when found.
+It omits `domain`, HTML, and empty optional fields. `--limit N` caps the first N
+results; without an explicit `--num`, it also sets the requested Google count.
+
 If Google shows consent or CAPTCHA, complete it manually in the open window.
 The loader announces `user-action-required`, brings the window forward, and waits
 up to 5 minutes. It resumes automatically after the check disappears. The page

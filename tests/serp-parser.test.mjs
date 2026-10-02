@@ -60,9 +60,21 @@ test('extracts organic headings, unwraps redirects, filters internal links and d
         <a href="/url?q=bad-url"><h3>Broken</h3></a>
         <a href="https://support.example.org/">Footer</a>`;
     assert.deepEqual(parseSerpHtml(html, pageUrl), [
-        { position: 1, url: 'https://www.example.org/ar', title: 'تحسين جودة الصورة', domain: 'example.org' },
-        { position: 2, url: 'https://example.net/enhance', title: 'Second', domain: 'example.net' },
-        { position: 3, url: 'https://example.com/tool', title: 'Third', domain: 'example.com' }
+        { url: 'https://www.example.org/ar', title: 'تحسين جودة الصورة', domain: 'example.org' },
+        { url: 'https://example.net/enhance', title: 'Second', domain: 'example.net' },
+        { url: 'https://example.com/tool', title: 'Third', domain: 'example.com' }
+    ]);
+});
+
+test('keeps Google product pages and translated organic results', () => {
+    const html = `<div id="search"><div id="rso">
+        <a href="https://www.google.com/intl/ar/photos/editing/"><h3>Google Photos</h3></a>
+        <a href="https://translate.google.com/translate?u=https%3A%2F%2Fvanceai.com%2Fimage-enhancer%2F&amp;hl=ar"><h3>Image Enhancer</h3></a>
+        <a href="https://www.google.com/search?q=other"><h3>Internal search</h3></a>
+    </div></div>`;
+    assert.deepEqual(parseSerpHtml(html, pageUrl), [
+        { title: 'Google Photos', url: 'https://www.google.com/intl/ar/photos/editing/', domain: 'google.com', result_type: 'organic' },
+        { title: 'Image Enhancer', url: 'https://vanceai.com/image-enhancer/', domain: 'vanceai.com', result_type: 'organic' }
     ]);
 });
 

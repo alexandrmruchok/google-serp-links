@@ -54,7 +54,7 @@ export async function runCli(args = process.argv.slice(2)) {
                     return await extractSerp(job, opts, browser);
                 } catch (error) {
                     return {
-                        ...jobLabel(job),
+                        ...(opts.compact && !opts.urlsOnly ? compactJobLabel(job) : jobLabel(job)),
                         error: normalizeError(error)
                     };
                 }
@@ -95,8 +95,19 @@ async function extractSerp(job, opts, browser) {
         ? validateGoogleSerp(job.serp)
         : buildGoogleSerpUrl(job);
 
-    const found = (await loadSerp(inputUrl, { ...opts, browser }))
-        .slice(0, Number(inputUrl.searchParams.get("num") || 10));
+    const loaded = await loadSerp(inputUrl, { ...opts, browser,
+        structured: opts.compact && !opts.urlsOnly });
+    const maxResults = Math.min(Number(inputUrl.searchParams.get("num") || 10), opts.limit ?? Infinity);
+    if (opts.compact && !opts.urlsOnly) {
+        const query = inputUrl.searchParams.get("q") || job.keyword || loaded.query;
+        return {
+            ...(query ? { query } : {}),
+            ...(loaded.shopping_present ? { shopping_present: true } : {}),
+            ...(loaded.local_pack_present ? { local_pack_present: true } : {}),
+            results: loaded.results.slice(0, maxResults)
+        };
+    }
+    const found = loaded.slice(0, maxResults);
 
     if (opts.details) {
         return {
@@ -182,6 +193,13 @@ function jobLabel(job) {
         : { serp: job.serp };
 }
 
+function compactJobLabel(job) {
+    if (job.type === "keyword") return { query: job.keyword };
+    let query;
+    try { query = new URL(job.serp).searchParams.get("q"); } catch {}
+    return query ? { query } : { serp: job.serp };
+}
+
 function dedupeJobs(jobs) {
     const seen = new Set();
     const out = [];
@@ -235,6 +253,8 @@ function parseArgs(args) {
         country: null,
         language: null,
         num: 10,
+        numExplicit: false,
+        limit: null,
         debugHtml: null,
         transport: "browser",
         browserChannel: "chrome",
@@ -243,6 +263,7 @@ function parseArgs(args) {
         headless: false,
         profile: null,
         details: false,
+        compact: false,
         urlsOnly: false,
         concurrency: 1
     };
@@ -260,6 +281,9 @@ function parseArgs(args) {
             opts.language = requireValue(args, ++i, arg).toLowerCase();
         } else if (arg === "--num") {
             opts.num = parseNum(requireValue(args, ++i, arg));
+            opts.numExplicit = true;
+        } else if (arg === "--limit") {
+            opts.limit = parseLimit(requireValue(args, ++i, arg));
         } else if (arg === "--concurrency") {
             const n = Number(requireValue(args, ++i, arg));
             if (!Number.isInteger(n) || n < 1 || n > 8) {
@@ -290,6 +314,8 @@ function parseArgs(args) {
             opts.headless = false; // Backwards-compatible alias; already the default.
         } else if (arg === "--details") {
             opts.details = true;
+        } else if (arg === "--compact") {
+            opts.compact = true;
         } else if (arg === "--urls-only") {
             opts.urlsOnly = true;
         } else if (arg === "--help" || arg === "-h") {
@@ -306,6 +332,8 @@ function parseArgs(args) {
         throw new Error("--urls-only-cannot-be-combined-with---output");
     }
 
+    if (opts.limit !== null && !opts.numExplicit) opts.num = opts.limit;
+
     return opts;
 }
 
@@ -313,6 +341,14 @@ function parseNum(value) {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 1 || n > 100) {
         throw new Error("--num-must-be-1..100");
+    }
+    return n;
+}
+
+function parseLimit(value) {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 1 || n > 100) {
+        throw new Error("--limit-must-be-1..100");
     }
     return n;
 }
@@ -327,8 +363,8 @@ function requireValue(args, index, option) {
 
 function usage() {
     process.stderr.write(
-        "Usage: run.sh [--country CC] [--lang LL] [--num N=10] " +
-        "[--input-file FILE] [--output FILE] [--details] [--urls-only] " +
+        "Usage: run.sh [--country CC] [--lang LL] [--num N=10] [--limit N] " +
+        "[--input-file FILE] [--output FILE] [--details] [--compact] [--urls-only] " +
         "[--concurrency N] [--debug-html FILE] [--http-only] [--headless] " +
         "[--transport browser|http|auto] [--browser-channel chrome|msedge|chromium] " +
         "[--timeout MS] [--manual-timeout MS] [--profile DIR] <KEYWORD|SERP_URL>...\n" +

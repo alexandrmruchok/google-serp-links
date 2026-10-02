@@ -15,7 +15,6 @@
       run.sh
       package.json
       README.md
-      SKILL.md
       src/
       tests/
       skills/google-serp-links/SKILL.md
