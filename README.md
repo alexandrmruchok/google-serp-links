@@ -40,7 +40,7 @@ node ./scripts/google-serp-links/serp-links.mjs --compact --country it --lang it
 
 ## 1. Подготовка
 
-Проект состоит из двух соседних Git-репозиториев: `scripts/google-serp-links` и `scripts/save-html`. После клонирования парсера разместите загрузчик рядом в папке `save-html`; структура описана в [описании репозиториев](docs/REPOSITORIES.md).
+Парсер Google и загрузчик HTML находятся в двух соседних Git-репозиториях: `scripts/google-serp-links` и `scripts/save-html`. При клонировании или переносе сохраняйте эти имена и расположение: парсер импортирует модуль соседнего загрузчика. Репозитории не являются Git-подмодулями; у каждого своя история и коммиты, а у общей папки проекта нет Git-репозитория. Инструкция загрузчика находится в `scripts/save-html/README.md`.
 
 Понадобятся Node.js с npm и установленный Google Chrome. В настройках проекта указано требование Node.js 20 или новее; используйте актуальную LTS-версию. Вместо Chrome можно выбрать установленный Microsoft Edge.
 
@@ -55,6 +55,21 @@ Set-Location 'D:\work\projects developement\seo texts developement'
 ```powershell
 npm --prefix ./scripts/google-serp-links install
 npm --prefix ./scripts/save-html install
+```
+
+Для установки точных версий из lock-файлов используйте `ci` вместо `install`.
+
+`serp-links.mjs` и `run.sh` в корне репозитория парсера запускают реализацию в `src/`; тесты находятся в `tests/`, навык — в `skills/google-serp-links/SKILL.md`. Из папки парсера запускайте `node ./serp-links.mjs` или `bash ./run.sh` с теми же параметрами. Относительные пути входных и выходных файлов отсчитываются от текущей папки терминала. Зависимости `node_modules/` и профили браузера исключены из Git.
+
+Проверки обоих репозиториев и их Git-статуса из общей папки проекта:
+
+```powershell
+npm --prefix ./scripts/save-html test
+npm --prefix ./scripts/save-html run test:browser
+npm --prefix ./scripts/google-serp-links test
+npm --prefix ./scripts/google-serp-links run test:browser
+git -C ./scripts/save-html status
+git -C ./scripts/google-serp-links status
 ```
 
 ## 2. Первый запуск

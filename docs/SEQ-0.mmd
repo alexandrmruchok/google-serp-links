@@ -1,0 +1,65 @@
+%% Current code: serp-links.mjs; src/serp-links.mjs:runCli/extractSerp;
+%% src/serp-source.mjs:loadSerp/assessGooglePage; src/serp-parser.mjs;
+%% ../save-html/save-html.mjs. Not the planned pagination API.
+%% CLI jobs may run with configured concurrency, browser requests use the shared loader.
+%% One requested page per job, no next-link traversal. Existing error handling is retained.
+sequenceDiagram
+    actor User as User
+    participant SERP as CLI / runCli
+    participant Source as loadSerp
+    participant Parser as SERP parser
+    participant HTML as save-html
+    User->>SERP: Queries / SERP URLs and options
+    Note over SERP: Parse options, read input, build and deduplicate jobs
+    alt No jobs or invalid multi-job debug HTML option
+        SERP-->>User: No jobs: usage and exit(2)<br/>Multi-job debug HTML: message, exitCode=2 and return
+    else Jobs accepted
+    SERP->>HTML: createBrowserLoader(channel, profile, timeouts, headless)
+    HTML-->>SERP: Shared loader
+    loop Jobs through mapLimit with configured concurrency
+        Note over SERP: Build or validate URL, pass shared browser<br/>structured=true when compact and not urlsOnly
+        SERP->>Source: loadSerp(inputUrl, options)
+        alt transport is HTTP or auto
+            Source->>HTML: fetchHtml(url, language, timeout, output)
+            HTML-->>Source: Page and load metadata
+            Source->>Parser: inspectHtml(html, requestedUrl, finalUrl)
+            Parser-->>Source: Diagnostics
+            Note over Source: Optional diagnostic JSON and logging<br/>Check page errors, access, status, timeout and content type<br/>Failure throws before result parsing
+            Source->>Parser: If checks pass: parseSerpHtml or parseSerpData
+            Parser-->>Source: Results or parse error
+            Note over Source: Auto falls back only for google-javascript-required<br/>or google-unrecognized-page, other errors propagate
+        end
+        opt browser transport or eligible auto fallback
+            Source->>HTML: renderHtml(url, browser, assessGooglePage, options)
+            loop Readiness assessment during rendered load
+                HTML->>Source: assessGooglePage(snapshot)
+                Source->>Parser: inspectHtml and try parseSerpHtml
+                Parser-->>Source: Diagnostics and parse result
+                Source-->>HTML: ready, userAction
+            end
+            HTML-->>Source: Rendered page and metadata
+            Source->>Parser: inspectHtml(html, requestedUrl, finalUrl)
+            Parser-->>Source: Diagnostics
+            Note over Source: Optional diagnostic JSON and logging<br/>Check page errors, access, status, timeout and content type<br/>Failure throws before result parsing
+            Source->>Parser: If checks pass: parseSerpHtml or parseSerpData
+            Parser-->>Source: Results or parse error
+        end
+        alt Job succeeds
+            Source-->>SERP: Parsed results or structured data
+            Note over SERP: Apply num/limit and output shape
+        else Job fails
+            Source--xSERP: Exception
+            Note over SERP: Normalize into job error, continue batch
+        end
+    end
+    Note over SERP,HTML: Shared loader is closed in finally, including failures
+    SERP->>HTML: browser.close()
+    alt Close succeeds
+        HTML-->>SERP: Closed
+        Note over SERP: Write output<br/>Job errors set exitCode=1
+        SERP-->>User: JSONL / URLs / output file and summary
+    else Close fails
+        HTML--xSERP: Exception
+        Note over SERP: runCli rejects before writing output
+    end
+    end

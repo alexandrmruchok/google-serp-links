@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google SERP Links — diagrams</title>
+  <link rel="stylesheet" href="/mermaid-view/mermaid-view.css">
+  <script src="/mermaid-view/mermaid-view.js" defer></script>
+  <style>
+    .diagram-nav { display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 24px; background: white; }
+    .diagram-nav a { color: #243448; }
+    mermaid-view { border-top: 1px solid #dce2e9; }
+  </style>
+</head>
+<body>
+  <nav class="diagram-nav" aria-label="Project diagrams">
+    <a href="#cls-0">Cls-0 — Module structure</a>
+    <a href="#seq-0">SEQ-0 — Detailed CLI execution</a>
+    <a href="#seq-1">SEQ-1 — Script interaction overview</a>
+  </nav>
+  <mermaid-view id="cls-0" src="architecture/Cls-0.mmd"
+    heading="Cls-0 — Module structure" diagram-lang="en"
+    description="Existing ESM modules and source dependencies."></mermaid-view>
+  <mermaid-view id="seq-0" src="SEQ-0.mmd"
+    heading="SEQ-0 — Detailed CLI execution" diagram-lang="en"
+    description="CLI and loadSerp: one page per job, HTTP/browser transport and batch output."></mermaid-view>
+  <mermaid-view id="seq-1" src="SEQ-1.mmd"
+    heading="SEQ-1 — Script interaction overview" diagram-lang="ru"
+    description="Existing calls between google-serp-links and save-html."></mermaid-view>
+</body>
+</html>

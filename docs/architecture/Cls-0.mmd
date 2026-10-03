@@ -1,0 +1,61 @@
+%% Current implementation only, not the target architecture saved in Git stash.
+%% Sources: serp-links.mjs; src/serp-links.mjs; src/serp-source.mjs;
+%% src/serp-parser.mjs; src/serp-browser.mjs; package.json;
+%% ../save-html/save-html.mjs and ../save-html/browser-loader.mjs.
+%% Classes represent existing ESM modules, not OOP classes or proposed layers.
+%% Namespaces group actual module locations. No Domain/Application separation is claimed.
+%% SERP and HTML identifiers are retained from existing project diagrams.
+%% CLI builds jobs, validates URLs, deduplicates jobs, limits concurrency/results,
+%% owns a shared browser loader, catches individual job errors and writes output.
+%% Source loads one requested SERP page, diagnoses and parses it. Auto transport
+%% retries via browser only for the two named JS/unrecognized-page parse failures.
+%% Parser uses Cheerio, extracts results/features and derives query from page URL.
+%% save-html owns HTTP/browser execution and HTML saving; CLI finally closes its shared loader.
+%% src/serp-browser.mjs is a compatibility re-export of createBrowserLoader from HTML,
+%% not an execution dependency of the current CLI/source modules; omitted as a redundant alias.
+%% No loadSerpPages, renderPages, pagination port or target registry exists in this code.
+%% Planned AC in docs/LOAD_SERP_PAGES.md are not coverage claims for this diagram.
+%% Mapping to the stashed target diagram: current SERP + SerpSource form its existing SERP aggregate.
+%% Current SerpParser maps to the existing parsing part of SerpHtmlAdapter;
+%% assessGooglePage remains in SerpSource; proposed assessment is a separate contract.
+%% NodeRuntime includes the file/path/process dependencies; the stashed target NodeSnapshotIO
+%% shows only the relevant I/O subset. Existing identifiers are retained.
+classDiagram
+    direction LR
+    namespace Entry {
+        class SerpCliEntry["CLI entry"]
+    }
+    namespace SerpModules {
+        class SERP["CLI jobs and output"] {
+            +runCli(args)
+        }
+        class SerpSource["Single-page loading"] {
+            +loadSerp(inputUrl, options)
+            +assessGooglePage(page)
+            +renderedPath(path)
+        }
+        class SerpParser["Google HTML parser"] {
+            +inspectHtml(html, requestedUrl, finalUrl)
+            +parseSerpHtml(html, pageUrl, diagnostics)
+            +parseSerpData(html, pageUrl, diagnostics)
+            +isGoogleHost(hostname)
+        }
+    }
+    namespace Dependencies {
+        class HTML["save-html"] {
+            +createBrowserLoader(options)
+            +fetchHtml(url, options)
+            +renderHtml(url, options)
+        }
+        class Cheerio["Cheerio"]
+        class NodeRuntime["Node.js files, paths and process"]
+    }
+    SerpCliEntry ..> SERP : invokes
+    SERP ..> SerpSource : loads each job
+    SERP ..> SerpParser : validates host
+    SERP ..> HTML : shared loader
+    SERP ..> NodeRuntime : input and output
+    SerpSource ..> SerpParser : assessment and parsing
+    SerpSource ..> HTML : HTTP and rendering
+    SerpSource ..> NodeRuntime : diagnostics and paths
+    SerpParser ..> Cheerio : parses DOM
