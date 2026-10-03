@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { fetchHtml, renderHtml } from '../../save-html/save-html.mjs';
+import * as realSaveHtml from '../../save-html/save-html.mjs';
 import { inspectHtml, parseSerpData, parseSerpHtml } from './serp-parser.mjs';
 
 export function renderedPath(path) {
@@ -19,6 +19,7 @@ export function assessGooglePage(page) {
 
 export async function loadSerp(inputUrl, { transport = 'browser', debugHtml,
     timeout = 30000, manualTimeout = 300000, headless = false, browser, structured = false,
+    saveHtml = realSaveHtml,
     log = message => process.stderr.write(message + '\n') } = {}) {
     const url = new URL(inputUrl);
     const language = url.searchParams.get('hl') || 'en';
@@ -53,7 +54,7 @@ export async function loadSerp(inputUrl, { transport = 'browser', debugHtml,
     }
 
     if (transport !== 'browser') {
-        const page = await fetchHtml(url, { language, timeout, output: debugHtml });
+        const page = await saveHtml.fetchHtml(url, { language, timeout, output: debugHtml });
         const diagnostics = await diagnose(page, 'http', debugHtml);
         try { return parse(page, diagnostics); }
         catch (error) {
@@ -65,7 +66,7 @@ export async function loadSerp(inputUrl, { transport = 'browser', debugHtml,
     }
 
     const output = debugHtml ? (transport === 'auto' ? renderedPath(debugHtml) : debugHtml) : null;
-    const page = await renderHtml(url, { browser, language, timeout, manualTimeout, headless,
+    const page = await saveHtml.renderHtml(url, { browser, language, timeout, manualTimeout, headless,
         output, assess: assessGooglePage, log });
     const diagnostics = await diagnose(page, 'browser', output);
     return parse(page, diagnostics);

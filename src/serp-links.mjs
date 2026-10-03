@@ -1,24 +1,32 @@
 import { isGoogleHost } from "./serp-parser.mjs";
-import { createBrowserLoader } from "../../save-html/save-html.mjs";
+import * as realSaveHtml from "../../save-html/save-html.mjs";
 import { loadSerp } from "./serp-source.mjs";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile } from "node:fs/promises";
 
-export async function runCli(args = process.argv.slice(2)) {
+export async function runCli(args = process.argv.slice(2), {
+    saveHtml = realSaveHtml,
+    stdout = process.stdout, stderr = process.stderr, stdin = process.stdin,
+    setExitCode = code => { if (code) process.exitCode = code; }
+} = {}) {
+    const finish = code => { setExitCode(code); return code; };
     let opts;
 
     try {
         opts = parseArgs(args);
     } catch (error) {
-        process.stderr.write(normalizeError(error) + "\n");
-        process.exit(2);
+        stderr.write(normalizeError(error) + "\n");
+        return finish(2);
     }
+
+    if (opts.help) { usage(stderr); return finish(0); }
+    opts.log = message => stderr.write(message + '\n');
 
     let jobs = opts.inputs.map(value => makeJob(value, opts));
 
     if (opts.inputFile) {
         const text = opts.inputFile === "-"
-            ? await readStdin()
+            ? await readStdin(stdin)
             : await readFile(opts.inputFile, "utf8");
 
         for (const line of text.split(/\r?\n/)) {
@@ -31,18 +39,17 @@ export async function runCli(args = process.argv.slice(2)) {
     jobs = dedupeJobs(jobs);
 
     if (jobs.length === 0) {
-        usage();
-        process.exit(2);
+        usage(stderr);
+        return finish(2);
     }
 
     if (opts.debugHtml && jobs.length !== 1) {
-        process.stderr.write("--debug-html-requires-one-query\n");
-        process.exitCode = 2;
-        return;
+        stderr.write("--debug-html-requires-one-query\n");
+        return finish(2);
     }
 
-    const browser = createBrowserLoader({ channel: opts.browserChannel, timeout: opts.timeout,
-        manualTimeout: opts.manualTimeout, headless: opts.headless,
+    const browser = saveHtml.createBrowserLoader({ channel: opts.browserChannel, timeout: opts.timeout,
+        manualTimeout: opts.manualTimeout, headless: opts.headless, log: opts.log,
         ...(opts.profile ? { profile: opts.profile } : {}) });
     let results;
     try {
@@ -51,7 +58,7 @@ export async function runCli(args = process.argv.slice(2)) {
             opts.concurrency,
             async (job) => {
                 try {
-                    return await extractSerp(job, opts, browser);
+                    return await extractSerp(job, opts, browser, saveHtml);
                 } catch (error) {
                     return {
                         ...(opts.compact && !opts.urlsOnly ? compactJobLabel(job) : jobLabel(job)),
@@ -72,30 +79,30 @@ export async function runCli(args = process.argv.slice(2)) {
 
     if (opts.output) {
         await writeFile(opts.output, payload, "utf8");
-        process.stdout.write(
+        stdout.write(
             `queries=${results.length} urls=${totalUrls} errors=${failed} output=${opts.output}\n`
         );
     } else if (opts.urlsOnly) {
         for (const result of results) {
             const urls = result.urls ?? result.results ?? [];
-            for (const url of urls) process.stdout.write(url + "\n");
+            for (const url of urls) stdout.write(url + "\n");
         }
     } else {
-        process.stdout.write(payload);
+        stdout.write(payload);
     }
 
-    if (failed > 0) process.exitCode = 1;
+    return finish(failed > 0 ? 1 : 0);
 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await runCli();
 
-async function extractSerp(job, opts, browser) {
+async function extractSerp(job, opts, browser, saveHtml) {
     const inputUrl = job.type === "url"
         ? validateGoogleSerp(job.serp)
         : buildGoogleSerpUrl(job);
 
-    const loaded = await loadSerp(inputUrl, { ...opts, browser,
+    const loaded = await loadSerp(inputUrl, { ...opts, browser, saveHtml,
         structured: opts.compact && !opts.urlsOnly });
     const maxResults = Math.min(Number(inputUrl.searchParams.get("num") || 10), opts.limit ?? Infinity);
     if (opts.compact && !opts.urlsOnly) {
@@ -319,8 +326,7 @@ function parseArgs(args) {
         } else if (arg === "--urls-only") {
             opts.urlsOnly = true;
         } else if (arg === "--help" || arg === "-h") {
-            usage();
-            process.exit(0);
+            return { ...opts, help: true };
         } else if (arg.startsWith("--")) {
             throw new Error(`unknown-option:${arg}`);
         } else {
@@ -361,8 +367,8 @@ function requireValue(args, index, option) {
     return value;
 }
 
-function usage() {
-    process.stderr.write(
+function usage(stderr = process.stderr) {
+    stderr.write(
         "Usage: run.sh [--country CC] [--lang LL] [--num N=10] [--limit N] " +
         "[--input-file FILE] [--output FILE] [--details] [--compact] [--urls-only] " +
         "[--concurrency N] [--debug-html FILE] [--http-only] [--headless] " +
@@ -372,8 +378,8 @@ function usage() {
     );
 }
 
-async function readStdin() {
+async function readStdin(input = process.stdin) {
     let data = "";
-    for await (const chunk of process.stdin) data += chunk;
+    for await (const chunk of input) data += chunk;
     return data;
 }
