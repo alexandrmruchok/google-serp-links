@@ -1,61 +1,299 @@
-%% Current implementation only, not the target architecture saved in Git stash.
-%% Sources: serp-links.mjs; src/serp-links.mjs; src/serp-source.mjs;
-%% src/serp-parser.mjs; src/serp-browser.mjs; package.json;
-%% ../save-html/save-html.mjs and ../save-html/browser-loader.mjs.
-%% Classes represent existing ESM modules, not OOP classes or proposed layers.
-%% Namespaces group actual module locations. No Domain/Application separation is claimed.
-%% SERP and HTML identifiers are retained from existing project diagrams.
-%% CLI builds jobs, validates URLs, deduplicates jobs, limits concurrency/results,
-%% owns a shared browser loader, catches individual job errors and writes output.
-%% Source loads one requested SERP page, diagnoses and parses it. Auto transport
-%% retries via browser only for the two named JS/unrecognized-page parse failures.
-%% Parser uses Cheerio, extracts results/features and derives query from page URL.
-%% save-html owns HTTP/browser execution and HTML saving; CLI finally closes its shared loader.
-%% src/serp-browser.mjs is a compatibility re-export of createBrowserLoader from HTML,
-%% not an execution dependency of the current CLI/source modules; omitted as a redundant alias.
-%% No loadSerpPages, renderPages, pagination port or target registry exists in this code.
-%% Planned AC in docs/LOAD_SERP_PAGES.md are not coverage claims for this diagram.
-%% Mapping to the stashed target diagram: current SERP + SerpSource form its existing SERP aggregate.
-%% Current SerpParser maps to the existing parsing part of SerpHtmlAdapter;
-%% assessGooglePage remains in SerpSource; proposed assessment is a separate contract.
-%% NodeRuntime includes the file/path/process dependencies; the stashed target NodeSnapshotIO
-%% shows only the relevant I/O subset. Existing identifiers are retained.
+%% Cls-0: minimal sufficient target architecture for google-serp-links.
+%% Static structure of modules and contracts; class does not require an OOP implementation.
+%% Sources relative to the google-serp-links root:
+%% S1 README.md: CLI modes, compact facts, loadSerp compatibility, planned pagination.
+%% S2 docs/LOAD_SERP_PAGES.md: public API, renderPages, AC-01..AC-17, implementation prerequisite.
+%% S3 README.md: separate sibling repositories, save-html imports.
+%% S4 DEBUGGING.md; docs/SEQ-0.mmd; docs/SEQ-1.mmd: current behavior and diagnostics.
+%% S5 package.json; src/serp-links.mjs; src/serp-source.mjs; src/serp-parser.mjs;
+%%    src/serp-browser.mjs: Node.js >=20, ESM, Cheerio 1.2.0, existing contracts.
+%% S6 ../save-html/README.md; ../save-html/save-html.mjs; ../save-html/package.json:
+%%    save-html owns browser, HTTP and file writes; Playwright Core 1.63.0 is internal to it.
+%% S7 docs/PAGINATION_FIXTURE_PROTOCOL.md: portable B1 protocol and historical local evidence;
+%%    429/CAPTCHA received on 2026-10-02; no real second page is available.
+%% S8 docs/diagrams.html: portable preview; normative decisions are in S2.
+%% No ADRs or separate AC directory were found in this repository; S2 supplies the normative AC.
+%% Existing decisions: ESM, two repositories, browser in HTML, parsing in SERP (S3..S6).
+%% Planned in S2: P.loadSerpPages and HTML.renderPages are not implemented yet.
+%% Proposed by this diagram and clarified in S2: pure rules, two ports, explicit composition,
+%% readiness/navigation evidence, protected search parameters and external failure adaptation.
+%% P, HTML and SERP are retained from existing diagrams; public API names are preserved.
+%% Display labels are concise English; identifiers denote units, not new files.
+%%
+%% Capabilities: collect all search pages -> P; preserve the search -> SerpSearchIdentity;
+%% retain the first unique result facts -> SerpCollection / SerpResult;
+%% recognize a page -> SerpMarkupPort; load and save -> SerpTraversalPort;
+%% preserve existing commands -> SERP. Layers are assigned after defining these boundaries.
+%% Domain and the use case use plain JS data, Promise, Set and the standard URL;
+%% they do not import Cheerio, Playwright, node:fs, process or concrete adapters.
+%% Application owns the ports: the use case needs them, not the domain values.
+%% Infrastructure is shown as external dependencies; composition is a separate wiring point.
+%% No extra service layers, database, repositories, DI container or bus are added (S1..S6).
+%% SERP is the existing compatibility surface outside the new clean core;
+%% S2 does not require migrating the entire old CLI to layers or connecting it to P.
+%% SERP retains JSONL/details/compact/urls-only, limits, batches and diagnostics (S1,S4).
+%% In particular, the current visible session and manual waiting do not become the headless API.
+%%
+%% SerpMarkupPort contract: assessPaginatedSerp(snapshot) -> {ready,userAction,reason}; pure, possibly async.
+%% The required assess callback is owned by P and delegated to this port, not to framework code.
+%% Readiness requires a recognized SERP shell plus completed pagination or a B1-proven terminal state.
+%% Single-page results without navigation and empty pages at the target hl require separate B1 fixtures.
+%% Their terminal evidence must be language-independent, not the existing en/ar noResults message.
+%% A partially rendered navigation container is insufficient; B1 must establish completion evidence.
+%% Results alone, a h3, complete or 500 ms of stable DOM do not prove navigation completeness.
+%% Empty pages with recognized pagination are valid; unknown/incomplete markup remains not ready.
+%% A readiness deadline yields load/browser-timeout with the available saved snapshot, not parse.
+%% SaveHtmlPagesAdapter retains only the last resolved assessment for the current attempt;
+%% P includes it in cause.lastAssessment, with awaiting-serp/awaiting-pagination/unrecognized-layout.
+%% The adapter clears this state before the first page and after nextPage before another load.
+%% It forwards only ready/userAction to HTML; reason belongs to the inner assessment contract.
+%% Without B1 terminal evidence, single-page/empty layouts remain load/browser-timeout.
+%% Consumer S preserves this error, stops subsequent steps and does not retry or infer an empty success
+%% (local ../find-chrome-extensions-by-keyword/docs/ARCHITECTURE.md, mirrored in S2).
+%% parse applies to parsing failures after successful loading, including a false ok:true fixture.
+%% Access/HTTP failures need not wait for pagination; changing unrelated DOM does not delay ready.
+%% inspectHtml returns plain access/markup indicators;
+%% parseSerpPage returns query, results and nextLink: absent | href | missingHref.
+%% New functions implement the target contract; existing assessGooglePage and parseSerpData
+%% exports, keys and loadSerp/CLI behavior remain unchanged (S5, tests/intent-contract.test.mjs).
+%% absent requires completed pagination without next or a B1-proven terminal state, not just results.
+%% Missing pagination evidence after a successful load yields parse/google-unrecognized-pagination.
+%% missingHref yields pagination/missing-next-href with null;
+%% unknown markup yields parse. SerpSearchIdentity resolves a relative href (S2).
+%% parseSerpPage derives query from pageUrl like the existing parseSerpData; extraction of q from the DOM
+%% is not assumed. P still explicitly validates the returned query under S2/AC-13.
+%%
+%% SerpTraversalPort contract mirrors the planned renderPages API in S2:
+%% one call, Promise<void>, required options.assess(snapshot) -> Promise<{ready,userAction,reason}>,
+%% options.nextPage(page) -> Promise<string|null>; sync assessment results are also accepted.
+%% page = {html,url,status,output,ok,error?,timedOut?,userAction?,lastAssessment?}; no data loss.
+%% lastAssessment is inner-only metadata; the adapter adds it without changing external page fields.
+%% Saving precedes exactly one awaited callback, including ok:false with HTML.
+%% Inner port rejection = {primaryError,closeError} with normalized SerpPagesError values.
+%% External HTML rejection uses the same envelope with neutral {phase,url,snapshot,error} values;
+%% phase = open|load|assess|save|callback|close; snapshot = {output,complete:true}|null for that attempt.
+%% HTML preserves callback's thrown value without importing or interpreting P's error model.
+%% SaveHtmlPagesAdapter maps open/load -> load, assess -> parse/serp-assessment-failed,
+%% save -> journal, close -> close; it privately tags assessment failures and retains the cause.
+%% HTML saves an available snapshot before propagating an assess failure, without nextPage;
+%% a failed write takes journal priority with cause.assessmentFailure, and close remains separate.
+%% The adapter
+%% preserves valid callback errors, forwards both callbacks and confirms the attempt snapshot;
+%% node:fs/path remain outside the core. A missing, stale, incomplete or unverifiable
+%% snapshot -> htmlPath:null + cause.htmlUnavailableReason; file existence does not prove freshness.
+%% HTML must provide evidence of a completed write for the specific attempt (S2/AC-15).
+%% SerpCompositionRoot computes absolute debug/page.html from the module location;
+%% it injects the adapters and this path. P sets headless:true, log:noOp and assess (S2/AC-03,AC-11).
+%% P retains public browserChannel; SaveHtmlPagesAdapter maps it to external channel, not browserChannel.
+%% defaultProfile remains an HTML setting; an omitted profile is not overridden.
+%% HTML owns created resources, sequential traversal and finally (S2,S6).
+%% The adapter neither opens a second browser nor closes a resource again.
+%% P owns callback state, classification and the public outcome after closing.
+%% Rule order inside P: access -> load -> actual URL -> parse -> query -> next.
+%% journal precedes the callback; named codes use exact matching, not substring matching.
+%% SerpPagesOutcome = {ok:true,data:{query,results}} | {ok:false,error:{stage,url,htmlPath,cause}}.
+%% stage = input|load|access|parse|pagination|journal|close; cause.message and cause.code are required.
+%% Stable codes and precedence are defined in S2; optional loaderCode/status preserve source facts.
+%% Unexpected callback failures use the current load/parse/pagination step; accumulation uses parse.
+%% Unexpected renderer throws/rejections -> load/renderer-unexpected-error; invalid envelopes
+%% -> load/renderer-contract-violation, expected URL and no unconfirmed/stale snapshot.
+%% Unknown throwable values and throwing string conversions normalize to safe serializable data.
+%% P catches synchronous throws and rejected Promises, returns no partial data;
+%% primaryError retains context; closeError is added to cause.close or yields close.
+%%
+%% AC coverage (responsibility, not a claim that tests have passed):
+%% AC-01 -> P: strict options set/values; SerpSearchIdentity: URL, nonblank q and duplicate parameters;
+%%           missing-query/empty-query/invalid-start/invalid-search-url follow S2's ordered input table;
+%%           only declared search/service input parameters are supported; unknown input -> unsupported-parameter;
+%%           ie/gs_lp/sclient/uact/iflsig/sca_esv/sstk/sxsrf are not accepted before B1/review expands the list;
+%%           SerpSearchIdentity also gates exact tbm/num/lr values and bounded tbs families/combinations;
+%%           the confirmed registry in S2 is empty, explicit gated input fails before I/O.
+%%           One observed tbm value does not permit another; a test-only nws registry rejects isch.
+%%           no browser, writes or callback before the port is called.
+%% AC-02 -> SerpSearchIdentity: exact decoded q, protected parameter values/presence, including hl/gl;
+%%           P / SerpPagesOutcome: original query; equivalent encodings are accepted.
+%% AC-03 -> P: timeout 30000, channel chrome or valid supplied values,
+%%           headless true, noOp, nextPage, assess; adapter maps browserChannel -> channel;
+%%           SerpCompositionRoot: output; HTML: defaultProfile; adapter UT verify external arguments.
+%% AC-04 -> SerpHtmlAdapter: href; SerpSearchIdentity: initial start and link resolution.
+%% AC-05 -> SerpSearchIdentity: Google /search, unambiguous protected parameters/start, growth/visited;
+%%           start is marked before the request; P: current page context and nextPageUrl.
+%%           q/hl/gl/tbm/tbs/lr/num and all unknown non-service parameters are immutable;
+%%           only ei/ved/sa/source/sourceid/oq/gs_lcrp/sei may vary. This conservative policy needs B1.
+%%           S2 defines first-violation codes; visited before growth distinguishes repeated-start.
+%%           Unknown input fails before I/O under AC-01; an unknown name added by Google fails identity.
+%%           Input is never silently stripped; README's copied-URL examples describe the existing CLI.
+%%           Separate real two-page B1 series must prove each admitted value/family's propagation:
+%%           input -> redirect -> next href -> second-page final URL, plus negative fixture cases.
+%%           These accepted target inputs are proposals until B1, not verified live compatibility.
+%%           Service-list changes require fixture evidence, contract review, regression tests and a release note.
+%% AC-06 -> P / HTML: no limits or retries; empty pages/duplicates do not stop traversal.
+%% AC-07 -> SerpHtmlAdapter: completed pagination/B1 terminal state, empty intermediate/end pages,
+%%           mandatory single-page-without-navigation and empty-target-hl fixtures with language-independent evidence;
+%%           results without navigation evidence, missingHref and unknown successful-load markup;
+%%           P: callback null; SerpCollection: an empty final result is valid.
+%% AC-08 -> SerpCollection / SerpResult: page/result order, first complete object for each URL.
+%% AC-09 -> P / SerpHtmlAdapter: assess is pure; HTML: one headless browser, await assess/nextPage,
+%%           no early snapshot when results precede navigation; unrelated DOM changes do not block ready.
+%% AC-10 -> HTML: saving, original page, one callback, load/journal without callback;
+%%           SaveHtmlPagesAdapter: forward full page context; map neutral open/load/assess/save failures;
+%%           HTML saves a snapshot on assess failure without calling nextPage.
+%% AC-11 -> SerpCompositionRoot: absolute path independent of cwd; P: noOp;
+%%           HTML: overwrite debug/page.html before callback, no JSON/stderr for this API.
+%% AC-12 -> SerpHtmlAdapter: HTML indicators; P: access priority, exact codes/statuses,
+%%           load before parsing, parse before next; HTML: journal takes priority over callback.
+%%           Readiness timeout remains load/browser-timeout; cause.code/status/loaderCode/lastAssessment are checked.
+%% AC-13 -> P / SerpHtmlAdapter: sorry/consent as access; SerpSearchIdentity: redirect;
+%%           P: exact query check before accumulation, even on the last page, no partial outcome.
+%%           SerpSearchIdentity: protect gl and all other protected parameters on redirects;
+%%           a redirect with another q fails before parsing; query mismatch is a separate port-stub test.
+%%           S2's ordered URL table distinguishes invalid-redirect, search-identity-changed and redirect-start-changed.
+%% AC-14 -> P / SerpPagesOutcome: exception boundary, exactly four error fields,
+%%           JSON serializability, no partial data; HTML: callback rejection stops traversal.
+%%           P / adapter: explicit fallback stages/context/codes for throws and malformed renderer errors.
+%%           Tagged assessment failures map to parse; journal retains assessmentFailure if snapshot saving fails.
+%% AC-15 -> HTML / SaveHtmlPagesAdapter: confirmed snapshot of the correct attempt or null;
+%%           P / SerpPagesOutcome: retain url/htmlPath and htmlUnavailableReason.
+%% AC-16 -> HTML: finally, close only created resources exactly once; P: await completion.
+%% AC-17 -> HTML / SaveHtmlPagesAdapter: both failures with context, including journal+close;
+%%           P / SerpPagesOutcome: primary cause + cause.close, or close without success.
+%%           HTML emits neutral failures; only the adapter knows the P error model.
+%%
+%% Assumption A1: ports are implemented as ESM functions/objects; UML adds no new framework.
+%% Assumption A2: the caller must run P calls sharing a snapshot/profile sequentially;
+%% no interprocess locks or automatic retries are added (S2).
+%% Open B1: accessible two-page, single-page-without-navigation and empty-target-hl fixtures are required;
+%% real Google has not yet confirmed protected identity (including gl), readiness/navigation evidence,
+%% terminal markers or the next selector. The fixture matrix includes omitted hl, locale tags,
+%% case, whitespace/Unicode q and delayed navigation; synthetic chains do not prove live reachability.
+%% Single-page/empty terminal selectors and sca_esv/sstk/sxsrf service behavior remain unconfirmed.
+%% B1 also requires copied address-bar and search-form URLs: record each actual parameter's
+%% presence/value transition input -> redirect -> next, including ie/gs_lp/sclient/uact/iflsig
+%% and sourceid/oq/gs_lcrp combinations. Synthetic identity rejection does not prove propagation.
+%% B1 separately gates each exact num/tbm/lr value and bounded tbs family through two-page series;
+%% num=10 from the current CLI is checked first plus another value, result count is a separate observation.
+%% Possible tbm -> udm changes require contract review; no automatic alias or parameter repair is added.
+%% No supported values/families are confirmed yet; missing evidence keeps the registry entry absent.
+%% Unsupported values/families/combinations fail input/unsupported-parameter before any browser request.
+%% Scroll-only modes without next are outside the current traversal contract, no automatic alias is added.
+%% Open B2: renderPages and evidence of a complete fresh snapshot must still be implemented
+%% in sibling save-html; current renderHtml/fetchHtml do not replace this contract (S2,S6).
+%% Validation plan from S2: P unit tests with a stub port and HTML fixtures; HTML unit tests
+%% with browser/filesystem stubs; adapter UT verify neutral failures and channel mapping;
+%% controlled Promises for assess/callback/close; profile release integration.
+%% B1 blocks implementation, not preparation of this target diagram; the AC are not declared met.
+%% B1 readiness/end evidence gates AC-06/07 and readiness in AC-09/12;
+%% live identity/next propagation gates AC-02/04 and positive transitions in AC-05/13.
+%% S7 records the 2026-10-03 429/CAPTCHA observation; it does not close either evidence gap.
+
 classDiagram
     direction LR
-    namespace Entry {
-        class SerpCliEntry["CLI entry"]
+
+    namespace Сборка["Composition"] {
+        class SerpCompositionRoot["API composition"] {
+            <<proposed>>
+            +createSerpPagesApi() P
+        }
     }
-    namespace SerpModules {
-        class SERP["CLI jobs and output"] {
+
+    namespace Адаптеры["Adapters"] {
+        class SERP["CLI and loadSerp"] {
+            <<existing>>
             +runCli(args)
-        }
-        class SerpSource["Single-page loading"] {
             +loadSerp(inputUrl, options)
-            +assessGooglePage(page)
-            +renderedPath(path)
         }
-        class SerpParser["Google HTML parser"] {
-            +inspectHtml(html, requestedUrl, finalUrl)
-            +parseSerpHtml(html, pageUrl, diagnostics)
-            +parseSerpData(html, pageUrl, diagnostics)
-            +isGoogleHost(hostname)
+        class SerpHtmlAdapter["Google HTML parsing"] {
+            <<extension>>
+            +assessPaginatedSerp(snapshot)
+            +inspectHtml(html, url)
+            +parseSerpPage(html, url)
+        }
+        class SaveHtmlPagesAdapter["Traversal via save-html"] {
+            <<proposed>>
+            +renderPages(inputUrl, options)
         }
     }
-    namespace Dependencies {
+
+    namespace Сценарии["Application"] {
+        class P["Collect all search pages"] {
+            <<planned>>
+            +loadSerpPages(inputUrl, options)
+        }
+        class SerpMarkupPort["SERP parsing port"] {
+            <<interface>>
+            +assessPaginatedSerp(snapshot)
+            +inspectHtml(html, url)
+            +parseSerpPage(html, url)
+        }
+        class SerpTraversalPort["Page traversal port"] {
+            <<interface>>
+            +renderPages(inputUrl, options)
+        }
+        class SerpPagesOutcome["Collection outcome"] {
+            <<contract>>
+            +ok: boolean
+            +data?: query, results
+            +error?: stage, url, htmlPath, cause
+        }
+    }
+
+    namespace Домен["Domain"] {
+        class SerpSearchIdentity["Search and page rules"] {
+            <<proposed>>
+            +fromInput(url)
+            +checkCurrent(url)
+            +checkNext(href, currentUrl) string
+        }
+        class SerpCollection["Unique results"] {
+            <<proposed>>
+            +append(results)
+            +results() SerpResult[]
+        }
+        class SerpResult["Result facts"] {
+            <<contract>>
+            +title: string
+            +url: string
+            +snippet?: string
+            +result_type?: string
+        }
+    }
+
+    namespace Среда["Infrastructure"] {
         class HTML["save-html"] {
+            <<external module>>
             +createBrowserLoader(options)
             +fetchHtml(url, options)
             +renderHtml(url, options)
+            +renderPages(inputUrl, options) planned
         }
-        class Cheerio["Cheerio"]
-        class NodeRuntime["Node.js files, paths and process"]
+        class Cheerio["Cheerio 1.2.0"] {
+            <<existing>>
+        }
+        class NodeSnapshotIO["Node.js files and paths"] {
+            <<existing>>
+        }
     }
-    SerpCliEntry ..> SERP : invokes
-    SERP ..> SerpSource : loads each job
-    SERP ..> SerpParser : validates host
-    SERP ..> HTML : shared loader
-    SERP ..> NodeRuntime : input and output
-    SerpSource ..> SerpParser : assessment and parsing
-    SerpSource ..> HTML : HTTP and rendering
-    SerpSource ..> NodeRuntime : diagnostics and paths
-    SerpParser ..> Cheerio : parses DOM
+
+    SerpCompositionRoot ..> P : creates
+    SerpCompositionRoot ..> SerpHtmlAdapter : injects
+    SerpCompositionRoot ..> SaveHtmlPagesAdapter : injects
+    SerpCompositionRoot ..> NodeSnapshotIO : module path
+
+    P ..> SerpMarkupPort
+    P ..> SerpTraversalPort
+    P ..> SerpSearchIdentity
+    P ..> SerpCollection
+    P ..> SerpPagesOutcome
+    SerpCollection ..> SerpResult
+    SerpMarkupPort ..> SerpResult
+    SerpPagesOutcome ..> SerpResult
+
+    SerpHtmlAdapter ..|> SerpMarkupPort
+    SaveHtmlPagesAdapter ..|> SerpTraversalPort
+    SerpHtmlAdapter ..> Cheerio
+    SaveHtmlPagesAdapter ..> HTML
+    SaveHtmlPagesAdapter ..> NodeSnapshotIO : verifies snapshot
+
+    SERP ..> SerpHtmlAdapter : current parser
+    SERP ..> HTML : current loader
+    SERP ..> NodeSnapshotIO : input and output

@@ -9,23 +9,28 @@
   <style>
     .diagram-nav { display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 24px; background: white; }
     .diagram-nav a { color: #243448; }
-    mermaid-view { border-top: 1px solid #dce2e9; }
+    mermaid-view { height: auto; border-top: 1px solid #dce2e9; }
+    mermaid-view .viewport { flex: none; overscroll-behavior: auto; }
   </style>
 </head>
 <body>
   <nav class="diagram-nav" aria-label="Project diagrams">
-    <a href="#cls-0">Cls-0 — Module structure</a>
+    <a href="#cls-0">Cls-0 — Target architecture</a>
     <a href="#seq-0">SEQ-0 — Detailed CLI execution</a>
     <a href="#seq-1">SEQ-1 — Script interaction overview</a>
+    <a href="#seq-2">SEQ-2 — Planned pagination</a>
   </nav>
   <mermaid-view id="cls-0" src="architecture/Cls-0.mmd"
-    heading="Cls-0 — Module structure" diagram-lang="en"
-    description="Existing ESM modules and source dependencies."></mermaid-view>
+    heading="Cls-0 — Target architecture" diagram-lang="en"
+    description="Proposed layers and contracts; pagination is not implemented."></mermaid-view>
   <mermaid-view id="seq-0" src="SEQ-0.mmd"
     heading="SEQ-0 — Detailed CLI execution" diagram-lang="en"
     description="CLI and loadSerp: one page per job, HTTP/browser transport and batch output."></mermaid-view>
   <mermaid-view id="seq-1" src="SEQ-1.mmd"
     heading="SEQ-1 — Script interaction overview" diagram-lang="ru"
     description="Existing calls between google-serp-links and save-html."></mermaid-view>
+  <mermaid-view id="seq-2" src="SEQ-2.mmd"
+    heading="SEQ-2 — Planned pagination" diagram-lang="en"
+    description="Proposed loadSerpPages and renderPages contracts."></mermaid-view>
 </body>
 </html>

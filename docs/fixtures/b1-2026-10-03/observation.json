@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-10-03T13:40:17.317Z",
+  "completedAt": "2026-10-03T13:40:20.868Z",
+  "inputUrl": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&hl=tr&gl=tr",
+  "browser": {
+    "channel": "chrome",
+    "headless": true,
+    "timeout": 30000,
+    "profile": "temporary isolated profile"
+  },
+  "observationPolicy": "assess.ready=false for a bounded observation window; no readiness selector validated",
+  "observations": [
+    {
+      "at": "2026-10-03T13:40:20.490Z",
+      "file": "transition-001.html",
+      "url": "https://www.google.com/sorry/index",
+      "status": 429,
+      "counts": {
+        "h3": 0,
+        "a": 3,
+        "a h3": 0
+      },
+      "captcha": true,
+      "consent": false
+    }
+  ],
+  "result": {
+    "url": "https://www.google.com/sorry/index",
+    "status": 429,
+    "ok": false,
+    "error": "user-action-required",
+    "timedOut": false,
+    "userAction": "captcha",
+    "output": "final.html"
+  },
+  "parsing": {
+    "ok": false,
+    "error": "google-blocked"
+  },
+  "nextHref": null,
+  "secondPageLoaded": false,
+  "accessStop": true,
+  "redaction": "Scripts; values, nonce/data/event attributes; non-search URL parameters in attributes and text; IP addresses. Final URL query removed because /sorry/ parameters contain challenge identifiers.",
+  "artifacts": [
+    {
+      "file": "final.html",
+      "sha256": "78be2187e97e252866868bfb296245479d5f492a49b42e62297b6c411d7b9163"
+    },
+    {
+      "file": "transition-001.html",
+      "sha256": "78be2187e97e252866868bfb296245479d5f492a49b42e62297b6c411d7b9163"
+    }
+  ]
+}

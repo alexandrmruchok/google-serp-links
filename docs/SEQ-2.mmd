@@ -1,0 +1,118 @@
+%% Проект API; источник: docs/LOAD_SERP_PAGES.md, AC-01..AC-17.
+%% Готовность/навигация и защищённая идентичность должны быть подтверждены B1.
+%% B1 открыт: 2026-10-03 получены 429/CAPTCHA, см. docs/PAGINATION_FIXTURE_PROTOCOL.md.
+%% Успешный охват AC-06/07, готовность AC-09/12, AC-02/04 и положительные переходы AC-05/13 не подтверждены.
+%% HTML владеет браузером и выдаёт нейтральные сбои; A отображает их в модель P.
+%% AC-07/B1: обязательны single-page без навигации и empty на целевом hl, признаки конца ещё не подтверждены.
+%% AC-12: A хранит последний вердикт текущей попытки, P возвращает cause.lastAssessment при timeout.
+%% AC-10/14/17: сбой assess -> сохранить доступный снимок -> parse, сбой записи -> journal + assessmentFailure.
+%% AC-01/05/13: коды URL выбираются по порядку таблиц контракта, visited проверяется до роста start.
+%% AC-01: неизвестное имя во входе -> input/unsupported-parameter до запроса, URL не очищается молча.
+%% B1 отдельно наблюдает реальные URL адресной строки/формы и перенос параметров в redirect/next.
+%% B1/AC-05: отдельные реальные серии для каждого допущенного значения/семейства, вход -> redirect -> next -> конечный URL.
+%% AC-01: SerpSearchIdentity проверяет значения tbm/num/lr и семейства/сочетания tbs по реестру, пока он пуст.
+sequenceDiagram
+    actor Caller as Вызывающий код
+    participant P as google-serp-links<br/>loadSerpPages (проект)
+    participant A as SaveHtmlPagesAdapter<br/>(предложение)
+    participant HTML as save-html<br/>renderPages (проект)
+
+    Note over Caller,HTML: B1 открыт: готовность/конец и перенос q/hl/gl/start ещё не подтверждены<br/>Схема показывает проектируемое поведение
+    Caller->>P: loadSerpPages(inputUrl, options)
+    Note over P: Проверяет q, опции, имена и реестр значений/семейств<br/>Неподдерживаемое имя, значение или сочетание — input/unsupported-parameter без I/O<br/>Сохраняет защищённую идентичность, включая hl/gl
+    alt Входные данные допустимы
+        P->>A: Порт renderPages(inputUrl, {browserChannel, assess,<br/>nextPage, output:htmlPath, headless:true, log:noOp, ...})
+        A->>HTML: renderPages(inputUrl, {channel, assess,<br/>nextPage, output:htmlPath, headless:true, log:noOp, ...})
+        Note over HTML: Открывает один браузер на весь обход<br/>Загружает страницы последовательно, без повторов и лимита
+        alt Браузер открыт
+            loop От inputUrl до nextPageUrl = null или ошибки
+                loop Опрос до готовности, ограничения, HTTP-сбоя или дедлайна
+                    HTML->>A: assess(snapshot)
+                    A->>P: Внутренний callback assess(snapshot)
+                    Note over P: Чистый SerpMarkupPort.assessPaginatedSerp<br/>Каркас плюс завершённая пагинация или подтверждённый B1 конец<br/>Single-page/empty без навигации требуют языконезависимого признака
+                    P-->>A: {ready, userAction, reason}
+                    Note over A: Хранит последний вердикт текущей попытки<br/>Существующий assessGooglePage в CLI не меняется
+                    A-->>HTML: {ready, userAction}
+                    Note over HTML: При ready=false повторяет опрос с новым снимком до дедлайна<br/>Ограничение/HTTP-сбой останавливает ожидание, таймаут даёт load в P
+                end
+                Note over HTML: Загружает страницу и перезаписывает debug/page.html<br/>Без диагностического JSON и служебного stderr
+                alt Страница получена и HTML сохранён
+                    HTML->>A: nextPage({html, url, status, output,<br/>ok, error, timedOut, userAction})
+                    A->>P: Сохранённая страница без потери полей, lastAssessment
+                    Note over P: Проверяет доступ, исход загрузки и фактический URL
+                    alt Ограничение доступа по HTML, URL, статусу или признакам загрузчика
+                        P--xA: Ошибка access — остановить сбор
+                        A--xHTML: Ошибка callback без изменения значения
+                        Note over HTML: Без обхода ограничений и повторов
+                    else Загрузка неуспешна либо HTTP-статус недопустим
+                        Note over P: ok=false, error или timedOut=true — сбой даже при HTTP 200<br/>Статус вне 2xx или null также даёт load
+                        P--xA: Ошибка load — остановить сбор<br/>HTML сохранён, при timeout причина включает lastAssessment
+                        A--xHTML: Ошибка callback без изменения значения
+                    else Фактический URL нарушает поиск
+                        Note over P: Ожидается Google /search с исходной защищённой идентичностью<br/>включая q/hl/gl, и start текущего запроса
+                        P--xA: Ошибка pagination — остановить сбор<br/>url ошибки — фактический URL, HTML — полученная страница
+                        A--xHTML: Ошибка callback без изменения значения
+                    else Получена допустимая страница
+                        rect rgb(230, 242, 255)
+                            Note over P: SerpMarkupPort.parseSerpPage<br/>Извлекает query, результаты и доказательство пагинации/конца<br/>Существующий parseSerpData не меняется
+                        end
+                        alt Ошибка парсинга HTML
+                            P--xA: Ошибка parse — остановить сбор<br/>Следующий URL не проверяется
+                            A--xHTML: Ошибка callback без изменения значения
+                        else Разобранный query не совпадает с исходным q
+                            Note over P: Защита контракта порта, а не независимый DOM-анализ query
+                            P--xA: Ошибка pagination / parser-query-mismatch<br/>Результаты страницы не накапливаются
+                            A--xHTML: Ошибка callback без изменения значения
+                        else Парсинг завершён успешно и query совпадает
+                            Note over P: Если есть next, проверяет URL и защищённую идентичность<br/>Затем проверяет visited-start перед ростом, только список служебных изменений
+                            alt Следующая ссылка недопустима
+                                P--xA: Ошибка pagination — остановить сбор<br/>Отклонённый URL не загружается
+                                A--xHTML: Ошибка callback без изменения значения
+                                Note over P: error.url — текущая страница со снимком<br/>cause.nextPageUrl — отклонённая ссылка либо null
+                            else Следующая ссылка допустима или конец выдачи распознан
+                                Note over P: Добавляет результаты, исключая повторные URL<br/>Сохраняет порядок и все поля первого вхождения
+                                Note over P: Нет новых результатов — продолжает обход<br/>при допустимом nextPageUrl
+                                P-->>A: Проверенный nextPageUrl либо null при подтверждённом конце
+                                A-->>HTML: Результат nextPage, ожидаемый до следующей загрузки
+                                Note over A: Очищает вердикт перед следующей загрузкой
+                            end
+                        end
+                    end
+                else Исключение проверки assess
+                    Note over A,HTML: A помечает исходный сбой, HTML сохраняет доступный снимок<br/>phase:assess без nextPage, A отображает в parse/serp-assessment-failed<br/>Ошибка записи даёт journal и cause.assessmentFailure
+                else Ошибка загрузки страницы
+                    Note over HTML: Нейтральный сбой phase:load — останавливает сбор<br/>Callback не вызывается, A отображает в load
+                else Ошибка записи HTML
+                    Note over HTML: Нейтральный сбой phase:save — останавливает сбор<br/>Callback не вызывается, A отображает в journal
+                end
+            end
+        else Ошибка открытия браузера
+            Note over HTML: Нейтральный сбой phase:open — обход не начинается<br/>Callback не вызывается, A отображает в load
+        end
+        Note over HTML: Закрывает созданные ресурсы браузера в finally при любом исходе
+        alt Есть основная ошибка или сбой закрытия
+            HTML--xA: {primaryError, closeError}<br/>Нейтральные phase, url, snapshot, error
+            Note over A: Проверяет снимок попытки, отображает внешние фазы/причины<br/>Сохраняет корректную callback-ошибку P, HTML не знает SerpPagesError
+            A--xP: {primaryError, closeError}<br/>Нормализованные SerpPagesError с обязательным cause.code
+            alt primaryError есть
+                Note over P: Сохраняет её stage, url, htmlPath и причину
+                opt closeError также есть
+                    Note over P: Добавляет closeError.cause.message/code в cause.close<br/>Сбой закрытия фатален из-за общего профиля
+                end
+            else Основной ошибки нет
+                Note over P: Возвращает closeError вместо успеха<br/>Контекст — последняя сохранённая страница либо null
+            end
+        else Обход завершён, закрытие успешно
+            HTML-->>A: Обход завершён, браузер закрыт
+            A-->>P: Успешное завершение порта
+        end
+    else Входные данные недопустимы
+        Note over P: Ошибка input — renderPages не вызывается<br/>Браузер не открывается
+    end
+
+    alt Итог loadSerpPages — успех
+        P-->>Caller: {ok:true,data:{query,results}}
+    else Ошибка на любом этапе
+        Note over P: Формирует ошибочный исход с cause.code и fallback-контекстом<br/>htmlPath — HTML нужной страницы либо null с причиной<br/>Предыдущий снимок не выдаётся за HTML ошибочной загрузки
+        P-->>Caller: {ok:false,error:{stage,url,htmlPath,cause}}
+    end
