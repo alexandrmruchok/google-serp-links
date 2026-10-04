@@ -117,6 +117,47 @@ function extractSearchResults($, pageUrl) {
     return found;
 }
 
+// Pagination readiness is separate from the existing single-page CLI parser.
+// Observed B1 ordering: results arrive before the navigation row and footer.
+function paginationMarkup($) {
+    const shell = $('#search').length > 0;
+    const row = $('#botstuff table[role="presentation"] > tbody > tr').first();
+    const cells = row.children('td');
+    const numbered = cells.filter((_, cell) => !$(cell).find('a').length && /^\d+$/.test(cleanText($(cell).text()))).length > 0;
+    const footer = $('#sfooter[role="contentinfo"] #footcnt').length > 0;
+    const terminal = row.length > 0 && cells.length === 0;
+    const complete = shell && $('#rso').length > 0 && footer && (numbered || terminal);
+    const next = row.find('#pnnext').first();
+    let nextLink = { kind: 'absent' };
+    if (next.length) {
+        const href = next.attr('href');
+        nextLink = href ? { kind: 'href', href } : { kind: 'missingHref' };
+    }
+    return { shell, complete, terminal, nextLink };
+}
+
+export function assessPaginatedSerp(snapshot) {
+    const diagnostics = inspectHtml(snapshot.html, snapshot.url);
+    const userAction = diagnostics.consent ? 'consent' : diagnostics.captcha || diagnostics.unusualTraffic ? 'captcha' : null;
+    if (userAction) return { ready: false, userAction, reason: 'access-required' };
+    const $ = cheerio.load(snapshot.html);
+    const markup = paginationMarkup($);
+    let reason;
+    if (!markup.complete) reason = markup.shell ? 'awaiting-pagination' : 'awaiting-serp';
+    else if (!markup.terminal) reason = 'ready-pagination';
+    else reason = extractSearchResults($, snapshot.url).length ? 'ready-single-page' : 'ready-empty';
+    return { ready: markup.complete, userAction: null, reason };
+}
+
+export function parseSerpPage(html, pageUrl) {
+    const $ = cheerio.load(html);
+    const markup = paginationMarkup($);
+    if (!markup.shell) throw Object.assign(new Error('Unrecognized Google search page'), { code: 'google-unrecognized-page' });
+    if (!markup.complete) throw Object.assign(new Error('Unconfirmed pagination or terminal state'), { code: 'google-unrecognized-pagination' });
+    return { query: new URL(pageUrl).searchParams.get('q'),
+        results: extractSearchResults($, pageUrl).map(({ domain, ...result }) => result), nextLink: markup.nextLink };
+}
+
 export function isGoogleHost(hostname) {
     return /(^|\.)google\.[a-z.]+$/i.test(hostname);
 }

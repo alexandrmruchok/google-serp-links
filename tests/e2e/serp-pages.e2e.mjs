@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, resolve, relative } from 'node:path';
+import { join, resolve, relative, isAbsolute, sep } from 'node:path';
 import { runScenario, events, assertSuccess, assertFailure, assertLifecycle, projectRoot } from './support/runner.mjs';
 import { search, serp, result, query, blank, captcha, consent, unusual } from './support/fixtures.mjs';
 
@@ -168,6 +168,18 @@ ac('AC-01/05/13', 'known service names may change, disappear or be added across 
     assert.equal(events(report, 'callback:start')[0].url, final);
 });
 
+ac('AC-05/13', 'observed service fields are accepted only during redirects and traversal', async t => {
+    const final = search({ extra: { sca_esv: 'first', sxsrf: 'first', sstk: 'first' } });
+    const next = search({ start: 10, extra: { sca_esv: 'second', sxsrf: 'second' } });
+    const secondFinal = search({ start: 10, extra: { sstk: 'second' } });
+    const report = await runScenario(t, { inputUrl: input, pages: [
+        { url: input, redirect: final }, { url: final, html: serp(undefined, { next }) },
+        { url: next, redirect: secondFinal }, { url: secondFinal, html: serp([result('second')]) }
+    ] });
+    assertSuccess(report, query, [result('first'), result('second')]);
+    assertLifecycle(report, [input, next]);
+});
+
 ac('AC-06/07/08/09', 'traverse 120 pages including empty and duplicate-only pages without limits or retries', async t => {
     const pages = [], expected = [];
     for (let index = 0; index < 120; index++) {
@@ -225,7 +237,7 @@ ac('AC-09', 'assess early results and incomplete navigation before the completed
     const next = search({ start: 19 });
     const ready = serp(undefined, { next });
     const early = serp(undefined, { navigation: false });
-    const partial = early.replace('<div id="footer">', '<div id="footer"><div id="navcnt"></div>');
+    const partial = serp(undefined, { next, footer: false });
     const report = await runScenario(t, { inputUrl: input, options: { timeout: 4000 }, assessDelay: 50, callbackDelay: 150,
         snapshots: [[early, partial, ready]], pages: [
             { url: input, html: ready }, { url: next, html: serp([result('second')]) }
@@ -233,8 +245,8 @@ ac('AC-09', 'assess early results and incomplete navigation before the completed
     assertSuccess(report, query, [result('first'), result('second')]);
     assertLifecycle(report, [input, next]);
     const verdicts = events(report, 'assess:end').filter(event => event.url === input);
-    assert.ok(verdicts.some(event => event.verdict.ready === false), 'Saved early results before navigation was complete');
-    assert.equal(verdicts.at(-1).verdict.ready, true);
+    assert.deepEqual(verdicts.map(event => event.verdict.ready), [false, false, true],
+        'Results and a completed navigation row must wait for the footer');
     assert.equal(events(report, 'callback:start').length, 2, 'Assessment accumulated results or invoked nextPage');
 });
 
@@ -434,8 +446,8 @@ ac('AC-10/14/15/17', 'assessment failure without an available saved snapshot rem
     assert.equal(events(report, 'close:end').length, 1);
 });
 
-// These tests are deliberately red until independently captured B1 evidence is
-// checked in. Synthetic pagination HTML above cannot satisfy these gates.
+// Independent Google captures, including early DOM states, are replayed through
+// the same public API. Synthetic HTML cannot satisfy these evidence gates.
 async function b1Case(name) {
     const directory = join(projectRoot, 'docs/fixtures/b1-pagination');
     let manifest;
@@ -448,13 +460,26 @@ async function b1Case(name) {
     assert.ok(fixture.evidence?.length, 'B1 must describe structural readiness/end evidence');
     assert.equal(fixture.requestedUrls?.length, fixture.pages.length);
     assert.equal(fixture.requestedUrls[0], fixture.inputUrl);
-    const pages = [];
+    const readSnapshot = async sample => {
+        const path = resolve(directory, sample.file), within = relative(directory, path);
+        assert.ok(within !== '..' && !within.startsWith('..' + sep) && !isAbsolute(within), 'B1 snapshot must stay within the fixture directory');
+        const html = await readFile(path, 'utf8');
+        assert.equal(createHash('sha256').update(html).digest('hex'), sample.sha256);
+        return html;
+    };
+    const pages = [], snapshots = [];
     for (const page of fixture.pages) {
         assert.equal(page.status >= 200 && page.status < 300, true, 'Blocked observations do not close B1');
-        const path = resolve(directory, page.file);
-        assert.equal(relative(directory, path).startsWith('..'), false);
-        const html = await readFile(path, 'utf8');
-        assert.equal(createHash('sha256').update(html).digest('hex'), page.sha256);
+        const html = await readSnapshot(page);
+        assert.ok(page.transitions?.length, 'B1 must retain early and completed DOM observations');
+        const samples = [];
+        let elapsedMs = -1;
+        for (const sample of page.transitions) {
+            assert.ok(sample.elapsedMs >= elapsedMs, 'DOM observations must retain capture order');
+            elapsedMs = sample.elapsedMs;
+            samples.push(await readSnapshot(sample));
+        }
+        snapshots.push([...samples, html]);
         pages.push({ ...page, html });
     }
     assert.ok(!['en', null].includes(new URL(fixture.inputUrl).searchParams.get('hl')));
@@ -466,7 +491,7 @@ async function b1Case(name) {
         if (requested !== page.url) replayPages.push({ url: requested, redirect: page.url });
         replayPages.push(page);
     }
-    return { ...fixture, pages, replayPages };
+    return { ...fixture, pages, replayPages, snapshots };
 }
 for (const [name, ids] of [
     ['multiPage', 'AC-02/04/05/06/07/09/13 B1'],
@@ -485,7 +510,16 @@ for (const [name, ids] of [
         assert.ok(!['en', 'ar', null].includes(new URL(fixture.inputUrl).searchParams.get('hl')));
         assert.equal(name === 'empty' ? fixture.results.length === 0 : fixture.results.length > 0, true);
     }
-    const report = await runScenario(t, { inputUrl: fixture.inputUrl, pages: fixture.replayPages, options: { timeout: 5000 } });
+    const report = await runScenario(t, { inputUrl: fixture.inputUrl, pages: fixture.replayPages,
+        snapshots: fixture.snapshots, options: { timeout: 5000 } });
     assertSuccess(report, new URL(fixture.inputUrl).searchParams.get('q'), fixture.results);
     assertLifecycle(report, fixture.requestedUrls);
+    for (const page of fixture.pages) {
+        const assessments = events(report, 'assess:end').filter(event => event.url === page.url);
+        assert.ok(assessments.length > 1, 'B1 must assess the early DOM before readiness');
+        assert.ok(assessments.slice(0, -1).every(event => !event.verdict.ready));
+        assert.equal(assessments.at(-1).verdict.ready, true);
+        const verdict = events(report, 'markup:assessment').filter(event => event.url === page.url).at(-1).verdict;
+        assert.equal(verdict.reason, page.assessmentReason, 'Readiness reason must come from the production parser');
+    }
 });

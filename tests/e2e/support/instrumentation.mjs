@@ -134,6 +134,7 @@ export function instrumentMarkup(name, real) {
         if (fault(name)) return fail(fault(name));
         const result = real(...args);
         const change = result => {
+            if (name === 'assess') record('markup:assessment', { url: args[0].url, verdict: result });
             if (name === 'parse' && fault('query')) return { ...result, query: 'different query' };
             if (name === 'parse' && fault('next')) return { ...result,
                 nextLink: new Proxy(result.nextLink ?? {}, { get() { throw throwable(); } }) };

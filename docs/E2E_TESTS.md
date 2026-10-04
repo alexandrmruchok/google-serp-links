@@ -1,30 +1,34 @@
 # Pagination acceptance tests
 
 The normative criteria are **AC-01–AC-17** in [LOAD_SERP_PAGES.md](LOAD_SERP_PAGES.md).
-The suite exercises the proposed public `loadSerpPages(inputUrl, options)` API.
-It deliberately fails while that API and the required B1 evidence are missing.
+The suite exercises the public `loadSerpPages(inputUrl, options)` API.
+Required B1 evidence is checked before replay; missing evidence fails the test.
 No test is skipped, marked TODO, or inverted to expect the missing implementation.
-Implementation of the pagination API is outside this change.
 
 Run from the `google-serp-links` repository:
 
 ```powershell
-npm test                  # Existing regression tests
+npm test                  # Regression tests and direct B1 parser checks
 npm run test:save-html     # Existing API/CLI dependency injection (requires updated sibling)
 npm run test:e2e:harness   # Verify the shared save-html mock integration
-npm run test:e2e           # Acceptance suite: currently expected to exit 1
+npm run test:e2e           # Acceptance suite, including real fixture replay
+npm run test:browser       # Real Chrome timing and resource cleanup
 ```
 
-The current acceptance run has 217 failing cases: 214 report the missing
-`loadSerpPages` export; three report missing real B1 fixtures. This is an explicit
-red development suite, separate from the existing default test command.
-Do not wrap it in a command that converts exit code 1 to success.
+The suite began as deliberately red tests. The API now exists; the remaining
+fixture collection status is recorded in [B1 README](fixtures/b1-pagination/README.md).
+Do not convert acceptance failure to success or replace real captures with synthetic HTML.
 
 The mock-dependent commands require the updated sibling checkout described in
-[TESTING_SAVE_HTML.md](../TESTING_SAVE_HTML.md). The committed sibling revision
-`6b689b582611dbbac9b0c54b9ed9b4888917fd91` supports the existing production API
-but has no testing module. Until the sibling changes are committed and pinned,
-these commands are opt-in; `npm test` excludes them.
+[TESTING_SAVE_HTML.md](../TESTING_SAVE_HTML.md). The shared mock/factory is
+committed at `d058d81c30cc6e240bc61ae75df4510bdc5e4439`; pagination additionally
+requires the sibling working-tree renderer changes. These commands are opt-in;
+`npm test` excludes mock-dependent integration tests. Its direct parser checks in
+`tests/pagination-markup.test.mjs` read the B1 manifest and hashed HTML without
+importing `save-html`. Early DOM snapshots must remain unready; completed
+mutation snapshots and final HTML must match the recorded readiness reasons,
+next links and expected results. The sibling's own `npm test` covers generic
+`renderPages` phases and resource closure with browser/writer stubs.
 
 ## Execution boundaries
 
@@ -33,12 +37,10 @@ The public entry defaults to `src/serp-source.mjs`, alongside the existing
 `SERP_PAGES_E2E_ENTRY` to its repository-relative path. That module must export
 `loadSerpPages`. Do not point it to a test implementation.
 
-The synthetic navigation shell in `support/fixtures.mjs` is provisional. Its
-selectors have not been validated by B1. Once real readiness/end evidence is
-captured, align the fixture builder with that observed markup before claiming
-successful browser acceptance. Do not implement selectors solely to satisfy
-this synthetic shell. The present red run establishes the missing API/fixture
-prerequisites; it cannot execute the pagination assertions until they exist.
+The synthetic navigation shell in `support/fixtures.mjs` follows the captured
+Google bottom table and footer. The independent B1 cases replay hashed early
+DOM states before completed markup through the same public entry. Synthetic
+scenarios cover rule and failure combinations; only live captures supply B1 evidence.
 
 Each scenario runs in a fresh Node child process with a disposable copy of both
 sibling repositories and an unrelated working directory. Dependencies resolve
@@ -56,9 +58,8 @@ Redirect fixtures provide the requested URL and a scripted actual final URL.
 Readiness scenarios supply an explicit sequence of early, incomplete and complete
 HTML snapshots to the production assessment callback. The driver does not parse
 pagination, guess next URLs or implement `renderPages`. The real application
-parser, renderer (when implemented) and public API still determine the outcome.
-The shared mock currently has no `renderPages`, and the suite does not invent a
-replacement: that missing production API remains an acceptance failure.
+parser, sibling `renderPages` implementation and public API determine the outcome.
+The shared mock supplies browser loading and writing, without replacing the renderer.
 
 A process-local ESM loader instruments these existing integration boundaries:
 
@@ -106,7 +107,9 @@ assessment/callbacks finish before another load, and closing finishes before
 the public outcome. The mock's queue supplies deterministic transport behavior;
 these checks do not prove actual DOM timing, HTTP redirects or profile-lock
 release. Actual browser integration remains the separate `npm run test:browser`
-suite and must be extended to the pagination API when that API exists.
+suite. Its pagination integration uses real Chrome with routed, synthetic pages
+to verify delayed navigation, changing unrelated DOM, traversal, closure and
+profile reuse; it does not claim access to live Google from a fresh profile.
 
 Default settings and all accepted channels are checked at the renderer/loader
 boundary using a scripted open failure; browser installations are unnecessary
@@ -151,9 +154,10 @@ is in another project; its pipeline stopping behavior requires tests there.
 The existing `docs/fixtures/b1-2026-10-03` observation establishes CAPTCHA only.
 It cannot make the successful B1 tests pass. Capture the required evidence
 according to [PAGINATION_FIXTURE_PROTOCOL.md](PAGINATION_FIXTURE_PROTOCOL.md);
-do not substitute the synthetic helper HTML.
+do not substitute the synthetic helper HTML. The completed base captures and
+their scope are described in [B1 README](fixtures/b1-pagination/README.md).
 
-The three explicit failing gates read
+The three required evidence gates read
 `docs/fixtures/b1-pagination/manifest.json` with this format:
 
 ```json

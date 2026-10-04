@@ -1,9 +1,9 @@
-%% Проект API; источник: docs/LOAD_SERP_PAGES.md, AC-01..AC-17.
-%% Готовность/навигация и защищённая идентичность должны быть подтверждены B1.
-%% B1 открыт: 2026-10-03 получены 429/CAPTCHA, см. docs/PAGINATION_FIXTURE_PROTOCOL.md.
-%% Успешный охват AC-06/07, готовность AC-09/12, AC-02/04 и положительные переходы AC-05/13 не подтверждены.
+%% Реализованный API; источник: docs/LOAD_SERP_PAGES.md, AC-01..AC-17.
+%% Базовый B1 подтверждён снимками 3–4 октября 2026: две страницы, single-page и empty, hl=tr/gl=tr.
+%% Наблюдения готовы в docs/fixtures/b1-pagination; попытка до ручной CAPTCHA дала HTTP 429.
+%% Другие языки и значения/семейства num/tbm/tbs/lr требуют отдельных серий наблюдений.
 %% HTML владеет браузером и выдаёт нейтральные сбои; A отображает их в модель P.
-%% AC-07/B1: обязательны single-page без навигации и empty на целевом hl, признаки конца ещё не подтверждены.
+%% AC-07/B1: terminal single-page и empty используют наблюдённые пустую строку таблицы и завершённый footer.
 %% AC-12: A хранит последний вердикт текущей попытки, P возвращает cause.lastAssessment при timeout.
 %% AC-10/14/17: сбой assess -> сохранить доступный снимок -> parse, сбой записи -> journal + assessmentFailure.
 %% AC-01/05/13: коды URL выбираются по порядку таблиц контракта, visited проверяется до роста start.
@@ -13,11 +13,11 @@
 %% AC-01: SerpSearchIdentity проверяет значения tbm/num/lr и семейства/сочетания tbs по реестру, пока он пуст.
 sequenceDiagram
     actor Caller as Вызывающий код
-    participant P as google-serp-links<br/>loadSerpPages (проект)
-    participant A as SaveHtmlPagesAdapter<br/>(предложение)
-    participant HTML as save-html<br/>renderPages (проект)
+    participant P as google-serp-links<br/>loadSerpPages
+    participant A as SaveHtmlPagesAdapter
+    participant HTML as save-html<br/>renderPages
 
-    Note over Caller,HTML: B1 открыт: готовность/конец и перенос q/hl/gl/start ещё не подтверждены<br/>Схема показывает проектируемое поведение
+    Note over Caller,HTML: API реализован. Базовый B1 на hl=tr/gl=tr подтверждает готовность, конец и перенос q/hl/gl/start<br/>Другие языки и записи реестра параметров требуют отдельных наблюдений
     Caller->>P: loadSerpPages(inputUrl, options)
     Note over P: Проверяет q, опции, имена и реестр значений/семейств<br/>Неподдерживаемое имя, значение или сочетание — input/unsupported-parameter без I/O<br/>Сохраняет защищённую идентичность, включая hl/gl
     alt Входные данные допустимы

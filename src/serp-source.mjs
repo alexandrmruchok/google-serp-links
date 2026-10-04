@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import * as realSaveHtml from '../../save-html/save-html.mjs';
 import { inspectHtml, parseSerpData, parseSerpHtml } from './serp-parser.mjs';
+export { loadSerpPages } from './serp-pages.mjs';
 
 export function renderedPath(path) {
     const extension = extname(path);

@@ -1,0 +1,386 @@
+{
+  "cases": {
+    "multiPage": {
+      "provenance": "real-google",
+      "capturedAt": "2026-10-04T02:50:12.936Z",
+      "browser": {
+        "channel": "chrome",
+        "headless": false,
+        "locale": "tr",
+        "manualCaptcha": true
+      },
+      "inputUrl": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&hl=tr&gl=tr",
+      "requestedUrls": [
+        "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&hl=tr&gl=tr",
+        "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&sca_esv=redacted-sca_esv&hl=tr&gl=tr&sxsrf=redacted-sxsrf&ei=redacted-ei&start=10&sa=redacted-sa&sstk=redacted-sstk&ved=redacted-ved"
+      ],
+      "evidence": "Observed results before the footer; complete navigation row or reserved empty row followed by #sfooter[role=contentinfo] #footcnt. See README.md and saved mutation snapshots.",
+      "transitions": [
+        "multiPage-page-1-transition-1.html",
+        "multiPage-page-1-transition-2.html",
+        "multiPage-page-1-transition-3.html",
+        "multiPage-page-1-transition-4.html",
+        "multiPage-page-2-transition-1.html",
+        "multiPage-page-2-transition-2.html",
+        "multiPage-page-2-transition-3.html"
+      ],
+      "pages": [
+        {
+          "url": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&hl=tr&gl=tr&sei=redacted-sei",
+          "file": "multiPage-page-1.html",
+          "sha256": "cda442e34bcd58e428373f7ec24f1dfd767fcd873de74522eae8cd3d2eb02455",
+          "status": 200,
+          "nextHref": "/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&sca_esv=redacted-sca_esv&hl=tr&gl=tr&sxsrf=redacted-sxsrf&ei=redacted-ei&start=10&sa=redacted-sa&sstk=redacted-sstk&ved=redacted-ved",
+          "navigationPresent": true,
+          "assessmentReason": "ready-pagination",
+          "transitions": [
+            {
+              "file": "multiPage-page-1-transition-1.html",
+              "sha256": "312989430bc6e8e09523800d946290de07b6f5a46e4ae4d9f96c5517cd3301bf",
+              "elapsedMs": 3146.0999999940395,
+              "signature": "[false,0,false,false,false,false]"
+            },
+            {
+              "file": "multiPage-page-1-transition-2.html",
+              "sha256": "396f682453928b6dd26ff1a66ceb8ab3e10b8f59166234d8569b3ec17f5252c6",
+              "elapsedMs": 3257.5999999940395,
+              "signature": "[true,1,false,false,false,true]"
+            },
+            {
+              "file": "multiPage-page-1-transition-3.html",
+              "sha256": "42a2d60738e872793be811a3a41622e5b2a5a5b2c5a15acda871e6b7a7ee74b0",
+              "elapsedMs": 3323,
+              "signature": "[true,6,false,false,false,true]"
+            },
+            {
+              "file": "multiPage-page-1-transition-4.html",
+              "sha256": "1fc662980d16af75fa04302c973c0c54d65048bc93ce8f2390f831fdaa52b7d5",
+              "elapsedMs": 3375.0999999940395,
+              "signature": "[true,10,true,true,true,true]"
+            }
+          ]
+        },
+        {
+          "url": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+translator&sca_esv=redacted-sca_esv&hl=tr&gl=tr&sxsrf=redacted-sxsrf&ei=redacted-ei&start=10&sa=redacted-sa&sstk=redacted-sstk&ved=redacted-ved",
+          "file": "multiPage-page-2.html",
+          "sha256": "c059e5a3c457fd65ff6b61ebfaa2a0e61dc9c0d4ee50ece8db76c2c145675836",
+          "status": 200,
+          "navigationPresent": true,
+          "assessmentReason": "ready-pagination",
+          "transitions": [
+            {
+              "file": "multiPage-page-2-transition-1.html",
+              "sha256": "312989430bc6e8e09523800d946290de07b6f5a46e4ae4d9f96c5517cd3301bf",
+              "elapsedMs": 1854.699999988079,
+              "signature": "[false,0,false,false,false,false]"
+            },
+            {
+              "file": "multiPage-page-2-transition-2.html",
+              "sha256": "e27e24563e1bfe1afb861ba0121e591c9817837d938cf2c92f1d505171b4b5e5",
+              "elapsedMs": 1957.0999999940395,
+              "signature": "[true,6,false,false,false,true]"
+            },
+            {
+              "file": "multiPage-page-2-transition-3.html",
+              "sha256": "4041a3eeded463677e645d9e9f1c2da45a64a17f9bfe37d294de338d20d6e53e",
+              "elapsedMs": 2046.300000011921,
+              "signature": "[true,10,true,false,true,true]"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "title": "Full Page & Bilingual Translator & AI-Powered Translation",
+          "url": "https://chromewebstore.google.com/detail/deeptranslate-full-page-b/noofnfniimcnghnkonpdlhlaeaocidbi?hl=tr",
+          "snippet": "Translate web pages effortlessly with Google Translate and OpenAI. Supports quick text translation and PDF imports for translation.",
+          "result_type": "organic"
+        },
+        {
+          "title": "Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/translator/pnpdnibdembnnlaiibkeandepjajegoi?hl=tr",
+          "snippet": "Translate words and phrases while browsing the web, using Google translator. ✨ Dil Deneyiminizi Dönüştüren Uzantı ✨ Dünya çapında web'de herhangi ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Talent - Immersive & AI Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/talent-translate/lbcbipoloacjakecofjkohgllhojdhhp?hl=tr",
+          "snippet": "Talent translation allows you to select text on any web page and translate it into the language you want. * Aggregate translation, which can display the results ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Translator, Dictionary, TTS - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/translate-translator-dict/mnlohknjofogcljbcknkakphddjpijak",
+          "snippet": "Highlight the word or text you want to translate and you will immediately see the translation into your language. All in one simple and understandable browser ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Smart Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/smart-translator/nhhbknaocnbdboenlibfmpcllbmiepam?hl=tr",
+          "snippet": "Google Çeviri'yi kullanarak seçilen, yazılan metin veya web sayfalarını hızla çevirin. One easy click to translate a text on the page.",
+          "result_type": "organic"
+        },
+        {
+          "title": "Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/translator/icchadngbpkcegnabnabhkjkfkfflmpj?hl=tr",
+          "snippet": "23 Şub 2025 — Translate words and phrases while browsing the web, using Google Translate. Language Translator is a Chrome extension that translates text ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Speech Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/speech-translator/jodfjmaiakpnmeddgpeflpafebmlhppn?hl=tr",
+          "snippet": "Herhangi bir videoyu, sesi veya canlı yayını anında çevirin. Temel özelliklerin kullanımı tamamen ücretsizdir ve kayıt gerektirmez! Bu eklenti, herhangi bir ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Input Translator - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/translate-and-copy/namibphobdcighbjjojlhcflpnhobjeo?hl=tr&ref=redacted-ref",
+          "snippet": "Translate your input text with AI. Instant text translation in any input field. Overview Input Translator is a lightweight browser extension that enables ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Google Çeviri - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/google-translate/aapbdbdomjkkjkaonfhkkikfgjllcleb?hl=tr",
+          "snippet": "This extension adds a button to your browser toolbar. Click the translate icon whenever you want to translate the page you're visiting. The extension also ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Linguist - web page translator - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/linguist-web-page-transla/gbefmodhlophhakmoecijeppjblibmie",
+          "snippet": "Web page translation, text translation, dictionary, history, custom translators, all you need to break language barriers.",
+          "result_type": "organic"
+        },
+        {
+          "title": "EndNote Click - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/endnote-click/fjgncogppolhfdpijihbpfmeohpaadpc",
+          "snippet": "EndNote Click helps you get to your full-text PDFs faster by securely connecting you to your library's journal subscriptions and open access content. Once you ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "DevTools Suite - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/devtools-suite/icnfpbdafmbbclahfldcjhceajlnipga",
+          "snippet": "DevTools Suite brings a collection of powerful tools for web developers and designers directly into your browser toolbar. Stop switching between multiple ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Poki Games - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/poki-games/baacnjoepcmoojkolfapncjkddmcgfel",
+          "snippet": "4 gün önce — Designed for easy browsing, the extension lets you discover games quickly and jump into play in seconds. You can explore different categories, ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "두들 게임 컬렉션 - Chrome 웹 스토어",
+          "url": "https://chromewebstore.google.com/detail/pjebhlfhlmpkkikjbhecbmmnabjadlfm?hl=ko",
+          "snippet": "Google Doodle 게임을 쉽게 접근하고 플레이하도록 만들어 놓은 편의성 있는 확장 프로그램을 만들었다. 이 확장 프로그램에는 축구, 크리켓, 농구, 루빅의 큐브, 할로윈 ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Clear Cache - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/clear-cache/cppjkneekbjaeellbfkmgnhonkkjfpdn",
+          "snippet": "Powerful, user-friendly browser data management, right from your toolbar. ♻️ Clear your browser's cache and data with a single click ♻️ Fine-grained ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Doodle oyunları koleksiyonu - Chrome Web Mağazası",
+          "url": "https://chromewebstore.google.com/detail/pjebhlfhlmpkkikjbhecbmmnabjadlfm?hl=tr",
+          "snippet": "Google Doodle oyunlarını her zaman ve her yerde oynamanızı sağlamak için, tüm oyunları tek bir yerde toplayan bir uzantı oluşturduk. Uzantı popüler oyunları ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Dark Reader - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/dark-reader/eimadpbcbfnmbkopoojfekhnkhdbieeh",
+          "snippet": "This eye-care extension enables night mode by creating dark themes for websites on the fly. Dark Reader inverts bright colors to make web pages high contrast ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "StorySaver - Story Downloader - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/kbabacfkbcpooagpgihilokipogdaebi?hl=sw",
+          "snippet": "StorySaver is a powerful Instagram downloader. It allows you to download your favorite Instagram photos, videos and stories easily.",
+          "result_type": "organic"
+        },
+        {
+          "title": "BeeLine Reader - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/beeline-reader/ifjafammaookpiajfbedmacfldaiamgg",
+          "snippet": "BeeLine helps you read more quickly and easily. Try it free and see how much it can help you!",
+          "result_type": "organic"
+        },
+        {
+          "title": "Spider Man Wallpaper - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/jangdgdnhfehjahkhilidenjhpfmaeed?hl=it",
+          "snippet": "Extension Features: 1. Shuffle Spider Man wallpaper every time you open a new tab. 2. Randomize Spider Man background or favorite it in wallpaper selection ...",
+          "result_type": "organic"
+        }
+      ]
+    },
+    "singlePage": {
+      "provenance": "real-google",
+      "capturedAt": "2026-10-04T02:51:17.685Z",
+      "browser": {
+        "channel": "chrome",
+        "headless": false,
+        "locale": "tr",
+        "manualCaptcha": true
+      },
+      "inputUrl": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+pnpdnibdembnnlaiibkeandepjajegoi&hl=tr&gl=tr",
+      "requestedUrls": [
+        "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+pnpdnibdembnnlaiibkeandepjajegoi&hl=tr&gl=tr"
+      ],
+      "evidence": "Observed results before the footer; complete navigation row or reserved empty row followed by #sfooter[role=contentinfo] #footcnt. See README.md and saved mutation snapshots.",
+      "transitions": [
+        "singlePage-page-1-transition-1.html",
+        "singlePage-page-1-transition-2.html",
+        "singlePage-page-1-transition-3.html",
+        "singlePage-page-1-transition-4.html"
+      ],
+      "pages": [
+        {
+          "url": "https://www.google.com/search?q=site%3Achromewebstore.google.com%2Fdetail%2F+pnpdnibdembnnlaiibkeandepjajegoi&hl=tr&gl=tr",
+          "file": "singlePage-page-1.html",
+          "sha256": "4466022648a7cfc6f090a176b0411d515535b3afeedfba314b33fbbee25d5d46",
+          "status": 200,
+          "navigationPresent": false,
+          "assessmentReason": "ready-single-page",
+          "transitions": [
+            {
+              "file": "singlePage-page-1-transition-1.html",
+              "sha256": "3992afd7616e5e9ea6c26fa7bc64cff8680a1e40379271eb58c8a52850bd24c9",
+              "elapsedMs": 1626.9000000059605,
+              "signature": "[false,0,false,false,false,false]"
+            },
+            {
+              "file": "singlePage-page-1-transition-2.html",
+              "sha256": "38f534d781af6000c796a8fe35924e25bbf795a792d1bcff2b588658c4a2b883",
+              "elapsedMs": 1723.199999988079,
+              "signature": "[true,1,false,false,false,true]"
+            },
+            {
+              "file": "singlePage-page-1-transition-3.html",
+              "sha256": "37ece519f353762257ffef75302e15dd17e4add2bd90e50aadd561b50a67ec8f",
+              "elapsedMs": 1777.4000000059605,
+              "signature": "[true,6,false,false,false,true]"
+            },
+            {
+              "file": "singlePage-page-1-transition-4.html",
+              "sha256": "04e48f58fa7e1ae955115184872bb99498477e8417ecea6fee33b67862cd391c",
+              "elapsedMs": 1797.0999999940395,
+              "signature": "[true,10,true,false,true,true]"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "title": "Twitter X Viewer – Anonymous Profile & Tweet Viewer",
+          "url": "https://chromewebstore.google.com/detail/ecjlokaabnhohgdbgaffgeidkdcjbdoe",
+          "snippet": "9 Şub 2026 — View Twitter (X) profiles and tweets anonymously. No login required, fast and private browsing.",
+          "result_type": "organic"
+        },
+        {
+          "title": "Live Wallpaper: Gojo Vs Sukuna Domain Clash - Jujutsu Kaisen",
+          "url": "https://chromewebstore.google.com/detail/eclkdlmhiejmpnjchilnndmflohmjgcd",
+          "snippet": "28 Kas 2024 — Experience the epic battle between Gojo and Sukuna with this live wallpaper for Chrome! Download now! Step into the world of Jujutsu Kaisen ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Notepad - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/notepad/ffbhefmlcoihbjcmibbfkocmnaiacinp",
+          "snippet": "A very simple notepad for Chrome with sync functionality. **A brand new version (5.0) has just been released** New features: - New Looks, - Multiple notes ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Snap&Read - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/snapread/mloajfnmjckfjbeeofcdaecbelnblden",
+          "snippet": "Text reader (TTS) that simplifies vocabulary, translates text, reads inaccessible text (OCR), and captures and cites sources.",
+          "result_type": "organic"
+        },
+        {
+          "title": "Snake - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/snake/oppflpnigmhkldmdmmbnopidlhahanji",
+          "snippet": "This extension allows you - the user, to play snake, whenever and wherever you want, without having to open a new window. Unlike many other options out there, ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "Slido - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/slido/dhhclfjehmpacimcdknijodpjpmppkii",
+          "snippet": "Engage your audience with live polling and Q&A without ever leaving Google Slides. **Please install our add-on first at slido.com/google-slides** With Slido ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "SingleFile - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/singlefile/mpiodijhokgodhhofbcjdecpffjipkle",
+          "snippet": "Save a complete page into a single HTML file. SingleFile is an extension that helps you to save a complete page (with CSS, images, fonts, frames, etc.) ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "OrangeMonkey - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/orangemonkey/ekmeppjgajofkpiofbebgcbohbmfldaf",
+          "snippet": "Lightweight Userscript manager. Provides userscripts support for Chromium browsers. OrangeMonkey is a lightweight userscript manager.",
+          "result_type": "organic"
+        },
+        {
+          "title": "Bitmoji - Chrome Web Store",
+          "url": "https://chromewebstore.google.com/detail/bitmoji/bfgdeiadkckfbkeigkoncpdieiiefpig",
+          "snippet": "Use Bitmoji anywhere on web! - Directly insert Bitmojis into Gmail - Click and drag to resize them - Copy and paste them almost anywhere If you don't have a ...",
+          "result_type": "organic"
+        },
+        {
+          "title": "FigmaCN - Chrome Web Store - Google",
+          "url": "https://chromewebstore.google.com/detail/figmacn/japkpjkpfdakpkbcehooampdjfgefndj",
+          "snippet": "中文Figma 插件，设计师人工翻译校验。 设计师人工翻译校验 原有功能不受影响 翻译贡献者： Yancy Min 普鲁文Pluwen ❤️ 赞助我们：Love.Figma.",
+          "result_type": "organic"
+        }
+      ]
+    },
+    "empty": {
+      "provenance": "real-google",
+      "capturedAt": "2026-10-03T18:37:08.659Z",
+      "browser": {
+        "channel": "chrome",
+        "headless": false,
+        "locale": "tr",
+        "manualCaptcha": true
+      },
+      "inputUrl": "https://www.google.com/search?q=%22codexb1zero7e617a39f9b7462bac0af9f788adcde1%22&hl=tr&gl=tr",
+      "requestedUrls": [
+        "https://www.google.com/search?q=%22codexb1zero7e617a39f9b7462bac0af9f788adcde1%22&hl=tr&gl=tr"
+      ],
+      "evidence": "Observed results before the footer; complete navigation row or reserved empty row followed by #sfooter[role=contentinfo] #footcnt. See README.md and saved mutation snapshots.",
+      "transitions": [
+        "empty-page-1-transition-1.html",
+        "empty-page-1-transition-2.html",
+        "empty-page-1-transition-3.html"
+      ],
+      "pages": [
+        {
+          "url": "https://www.google.com/search?q=%22codexb1zero7e617a39f9b7462bac0af9f788adcde1%22&hl=tr&gl=tr",
+          "file": "empty-page-1.html",
+          "sha256": "666c9bfe60cbdc9fcf7bf6494e95b78461ca15c8abec38735e879cc6c5cf2b81",
+          "status": 200,
+          "navigationPresent": false,
+          "assessmentReason": "ready-empty",
+          "transitions": [
+            {
+              "file": "empty-page-1-transition-1.html",
+              "sha256": "a3e8aaf19f3b671a87edfe25c0512e411ab067e280734708c3bf03e644da7e38",
+              "elapsedMs": 1162.4000000059605,
+              "signature": "[false,0,false,false,false,false]"
+            },
+            {
+              "file": "empty-page-1-transition-2.html",
+              "sha256": "9898c022600bc35f6f94c9c84c08e98855d024fea35dec86930b541e9e1cc13b",
+              "elapsedMs": 1283.199999988079,
+              "signature": "[true,0,true,false,false,true]"
+            },
+            {
+              "file": "empty-page-1-transition-3.html",
+              "sha256": "7511ac40e2d79291c83d44b4f4a19b0d6bb225f9aa046c11c693208774a2a086",
+              "elapsedMs": 1284.300000011921,
+              "signature": "[true,0,true,false,true,true]"
+            }
+          ]
+        }
+      ],
+      "results": []
+    }
+  }
+}

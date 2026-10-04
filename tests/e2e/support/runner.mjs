@@ -52,7 +52,8 @@ export async function runScenario(t, scenario, { harness = false } = {}) {
     try { status = await completion; } finally { clearTimeout(timer); }
     assert.equal(status.code, 0, `Worker failed (${status.signal ?? status.code}): ${stderr}`);
     const report = JSON.parse(await readFile(config.report, 'utf8'));
-    assert.equal(report.mockFailure, undefined, `Shared save-html mock scenario failed: ${report.mockFailure}`);
+    assert.equal(report.mockFailure, undefined, `Shared save-html mock scenario failed: ${report.mockFailure}` +
+        (report.rejected ? `; worker exception: ${report.rejected.message}` : ''));
     if (!scenario.expectReject) assert.equal(report.rejected, undefined, `Public Promise rejected: ${report.rejected?.message}`);
     assert.equal(report.residualLoaders, 0, 'API resolved before closing its loader');
     assert.equal(stdout, '', 'API emitted service stdout');

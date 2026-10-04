@@ -11,9 +11,9 @@ export function search({ q = query, hl = 'tr', gl = 'tr', start, host = 'www.goo
 }
 export const result = (name, extra = {}) => ({ title: name, url: `https://example.org/${name}`, result_type: 'organic', ...extra });
 const escape = text => String(text).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-export function serp(results = [result('first')], { next = null, navigation = true, missingHref = false } = {}) {
+export function serp(results = [result('first')], { next = null, navigation = true, footer = true, missingHref = false } = {}) {
     const cards = results.map(item => `<div class="MjjYud"><a href="${escape(item.url)}"><h3>${escape(item.title)}</h3></a>${item.snippet ? `<div class="VwiC3b">${escape(item.snippet)}</div>` : ''}</div>`).join('');
-    const nav = navigation ? `<div id="botstuff"><div id="navcnt"><table role="presentation"><tbody><tr><td><span class="cur">1</span></td>${next !== null || missingHref ? `<td><a id="pnnext"${missingHref ? '' : ` href="${escape(next)}"`}><span>Sonraki</span></a></td>` : ''}</tr></tbody></table></div></div>` : '';
+    const nav = navigation ? `<div id="botstuff"><table role="presentation"><tbody><tr><td>1</td>${next !== null || missingHref ? `<td><a id="pnnext"${missingHref ? '' : ` href="${escape(next)}"`}><span>Sonraki</span></a></td>` : ''}</tr></tbody></table></div>${footer ? '<div id="sfooter" role="contentinfo"><div id="footcnt"></div></div>' : ''}` : '';
     return `<!doctype html><html lang="tr"><head><title>SERP</title></head><body><main id="main"><div id="search"><div id="rso">${cards}</div></div><div id="footer">${nav}</div></main><div id="noise"></div></body></html>`;
 }
 export const blank = '<!doctype html><html><body><div>Loading</div></body></html>';

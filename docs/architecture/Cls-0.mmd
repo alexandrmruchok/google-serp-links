@@ -1,21 +1,21 @@
-%% Cls-0: minimal sufficient target architecture for google-serp-links.
+%% Cls-0: implemented pagination architecture for google-serp-links.
 %% Static structure of modules and contracts; class does not require an OOP implementation.
 %% Sources relative to the google-serp-links root:
-%% S1 README.md: CLI modes, compact facts, loadSerp compatibility, planned pagination.
-%% S2 docs/LOAD_SERP_PAGES.md: public API, renderPages, AC-01..AC-17, implementation prerequisite.
+%% S1 README.md: CLI modes, compact facts, loadSerp compatibility, pagination API.
+%% S2 docs/LOAD_SERP_PAGES.md: public API, renderPages, AC-01..AC-17, evidence requirements.
 %% S3 README.md: separate sibling repositories, save-html imports.
 %% S4 DEBUGGING.md; docs/SEQ-0.mmd; docs/SEQ-1.mmd: current behavior and diagnostics.
 %% S5 package.json; src/serp-links.mjs; src/serp-source.mjs; src/serp-parser.mjs;
 %%    src/serp-browser.mjs: Node.js >=20, ESM, Cheerio 1.2.0, existing contracts.
 %% S6 ../save-html/README.md; ../save-html/save-html.mjs; ../save-html/package.json:
 %%    save-html owns browser, HTTP and file writes; Playwright Core 1.63.0 is internal to it.
-%% S7 docs/PAGINATION_FIXTURE_PROTOCOL.md: portable B1 protocol and historical local evidence;
-%%    429/CAPTCHA received on 2026-10-02; no real second page is available.
+%% S7 docs/PAGINATION_FIXTURE_PROTOCOL.md; docs/fixtures/b1-pagination/README.md:
+%%    real two-page, single-page and empty observations on 3–4 October 2026, hl=tr/gl=tr.
 %% S8 docs/diagrams.html: portable preview; normative decisions are in S2.
 %% No ADRs or separate AC directory were found in this repository; S2 supplies the normative AC.
 %% Existing decisions: ESM, two repositories, browser in HTML, parsing in SERP (S3..S6).
-%% Planned in S2: P.loadSerpPages and HTML.renderPages are not implemented yet.
-%% Proposed by this diagram and clarified in S2: pure rules, two ports, explicit composition,
+%% Implemented in S2: P.loadSerpPages and sibling HTML.renderPages.
+%% This diagram groups current module functions, closure state and contracts:
 %% readiness/navigation evidence, protected search parameters and external failure adaptation.
 %% P, HTML and SERP are retained from existing diagrams; public API names are preserved.
 %% Display labels are concise English; identifiers denote units, not new files.
@@ -39,7 +39,7 @@
 %% Readiness requires a recognized SERP shell plus completed pagination or a B1-proven terminal state.
 %% Single-page results without navigation and empty pages at the target hl require separate B1 fixtures.
 %% Their terminal evidence must be language-independent, not the existing en/ar noResults message.
-%% A partially rendered navigation container is insufficient; B1 must establish completion evidence.
+%% A navigation row without the footer is insufficient, as observed in the empty B1 sequence.
 %% Results alone, a h3, complete or 500 ms of stable DOM do not prove navigation completeness.
 %% Empty pages with recognized pagination are valid; unknown/incomplete markup remains not ready.
 %% A readiness deadline yields load/browser-timeout with the available saved snapshot, not parse.
@@ -47,7 +47,7 @@
 %% P includes it in cause.lastAssessment, with awaiting-serp/awaiting-pagination/unrecognized-layout.
 %% The adapter clears this state before the first page and after nextPage before another load.
 %% It forwards only ready/userAction to HTML; reason belongs to the inner assessment contract.
-%% Without B1 terminal evidence, single-page/empty layouts remain load/browser-timeout.
+%% Layouts without recognized B1 completion evidence remain load/browser-timeout.
 %% Consumer S preserves this error, stops subsequent steps and does not retry or infer an empty success
 %% (local ../find-chrome-extensions-by-keyword/docs/ARCHITECTURE.md, mirrored in S2).
 %% parse applies to parsing failures after successful loading, including a false ok:true fixture.
@@ -63,9 +63,10 @@
 %% parseSerpPage derives query from pageUrl like the existing parseSerpData; extraction of q from the DOM
 %% is not assumed. P still explicitly validates the returned query under S2/AC-13.
 %%
-%% SerpTraversalPort contract mirrors the planned renderPages API in S2:
+%% SerpTraversalPort contract adapts the implemented renderPages API in S2:
 %% one call, Promise<void>, required options.assess(snapshot) -> Promise<{ready,userAction,reason}>,
-%% options.nextPage(page) -> Promise<string|null>; sync assessment results are also accepted.
+%% options.nextPage(page, snapshotContext) -> Promise<string|null>; sync callback results are accepted.
+%% snapshotContext is verified by the adapter; external HTML.nextPage receives only page.
 %% page = {html,url,status,output,ok,error?,timedOut?,userAction?,lastAssessment?}; no data loss.
 %% lastAssessment is inner-only metadata; the adapter adds it without changing external page fields.
 %% Saving precedes exactly one awaited callback, including ok:false with HTML.
@@ -105,7 +106,7 @@
 %% AC-01 -> P: strict options set/values; SerpSearchIdentity: URL, nonblank q and duplicate parameters;
 %%           missing-query/empty-query/invalid-start/invalid-search-url follow S2's ordered input table;
 %%           only declared search/service input parameters are supported; unknown input -> unsupported-parameter;
-%%           ie/gs_lp/sclient/uact/iflsig/sca_esv/sstk/sxsrf are not accepted before B1/review expands the list;
+%%           ie/gs_lp/sclient/uact/iflsig/sca_esv/sstk/sxsrf are not accepted in the input;
 %%           SerpSearchIdentity also gates exact tbm/num/lr values and bounded tbs families/combinations;
 %%           the confirmed registry in S2 is empty, explicit gated input fails before I/O.
 %%           One observed tbm value does not permit another; a test-only nws registry rejects isch.
@@ -119,13 +120,14 @@
 %% AC-05 -> SerpSearchIdentity: Google /search, unambiguous protected parameters/start, growth/visited;
 %%           start is marked before the request; P: current page context and nextPageUrl.
 %%           q/hl/gl/tbm/tbs/lr/num and all unknown non-service parameters are immutable;
-%%           only ei/ved/sa/source/sourceid/oq/gs_lcrp/sei may vary. This conservative policy needs B1.
+%%           ei/ved/sa/source/sourceid/oq/gs_lcrp/sei and traversal-only sca_esv/sstk/sxsrf may vary.
+%%           The latter three were admitted after review of the observed B1 next link.
 %%           S2 defines first-violation codes; visited before growth distinguishes repeated-start.
 %%           Unknown input fails before I/O under AC-01; an unknown name added by Google fails identity.
 %%           Input is never silently stripped; README's copied-URL examples describe the existing CLI.
 %%           Separate real two-page B1 series must prove each admitted value/family's propagation:
 %%           input -> redirect -> next href -> second-page final URL, plus negative fixture cases.
-%%           These accepted target inputs are proposals until B1, not verified live compatibility.
+%%           num/tbm/tbs/lr require separate B1 series before entries are admitted to the empty registry.
 %%           Service-list changes require fixture evidence, contract review, regression tests and a release note.
 %% AC-06 -> P / HTML: no limits or retries; empty pages/duplicates do not stop traversal.
 %% AC-07 -> SerpHtmlAdapter: completed pagination/B1 terminal state, empty intermediate/end pages,
@@ -162,12 +164,12 @@
 %% Assumption A1: ports are implemented as ESM functions/objects; UML adds no new framework.
 %% Assumption A2: the caller must run P calls sharing a snapshot/profile sequentially;
 %% no interprocess locks or automatic retries are added (S2).
-%% Open B1: accessible two-page, single-page-without-navigation and empty-target-hl fixtures are required;
-%% real Google has not yet confirmed protected identity (including gl), readiness/navigation evidence,
-%% terminal markers or the next selector. The fixture matrix includes omitted hl, locale tags,
-%% case, whitespace/Unicode q and delayed navigation; synthetic chains do not prove live reachability.
-%% Single-page/empty terminal selectors and sca_esv/sstk/sxsrf service behavior remain unconfirmed.
-%% B1 also requires copied address-bar and search-form URLs: record each actual parameter's
+%% Base B1 is complete on hl=tr/gl=tr: accessible two-page, single-page and empty captures confirm
+%% q/hl/gl/start, the next selector, results before navigation and the observed terminal structure.
+%% Visible Chrome access after manual CAPTCHA does not guarantee fresh headless-profile access.
+%% Cross-language captures, omitted hl, locale tags and whitespace/Unicode query observations remain
+%% research items; synthetic tests of those rules do not prove live reachability.
+%% Further B1 work includes copied address-bar and search-form URLs: record each actual parameter's
 %% presence/value transition input -> redirect -> next, including ie/gs_lp/sclient/uact/iflsig
 %% and sourceid/oq/gs_lcrp combinations. Synthetic identity rejection does not prove propagation.
 %% B1 separately gates each exact num/tbm/lr value and bounded tbs family through two-page series;
@@ -176,23 +178,20 @@
 %% No supported values/families are confirmed yet; missing evidence keeps the registry entry absent.
 %% Unsupported values/families/combinations fail input/unsupported-parameter before any browser request.
 %% Scroll-only modes without next are outside the current traversal contract, no automatic alias is added.
-%% Open B2: renderPages and evidence of a complete fresh snapshot must still be implemented
-%% in sibling save-html; current renderHtml/fetchHtml do not replace this contract (S2,S6).
-%% Validation plan from S2: P unit tests with a stub port and HTML fixtures; HTML unit tests
+%% B2 is implemented: sibling renderPages provides per-attempt completed-write evidence (S2,S6).
+%% Validation from S2: P unit tests with a stub port and HTML fixtures; HTML unit tests
 %% with browser/filesystem stubs; adapter UT verify neutral failures and channel mapping;
 %% controlled Promises for assess/callback/close; profile release integration.
-%% B1 blocks implementation, not preparation of this target diagram; the AC are not declared met.
-%% B1 readiness/end evidence gates AC-06/07 and readiness in AC-09/12;
-%% live identity/next propagation gates AC-02/04 and positive transitions in AC-05/13.
-%% S7 records the 2026-10-03 429/CAPTCHA observation; it does not close either evidence gap.
+%% The default npm test includes direct B1 parser tests; E2E replays the same captures through P.
+%% S7 retains historical 429/CAPTCHA attempts and the later successful base observations.
 
 classDiagram
     direction LR
 
     namespace Сборка["Composition"] {
         class SerpCompositionRoot["API composition"] {
-            <<proposed>>
-            +createSerpPagesApi() P
+            <<module>>
+            +loadSerpPages(inputUrl, options)
         }
     }
 
@@ -209,14 +208,14 @@ classDiagram
             +parseSerpPage(html, url)
         }
         class SaveHtmlPagesAdapter["Traversal via save-html"] {
-            <<proposed>>
+            <<adapter>>
             +renderPages(inputUrl, options)
         }
     }
 
     namespace Сценарии["Application"] {
         class P["Collect all search pages"] {
-            <<planned>>
+            <<use case>>
             +loadSerpPages(inputUrl, options)
         }
         class SerpMarkupPort["SERP parsing port"] {
@@ -239,15 +238,15 @@ classDiagram
 
     namespace Домен["Domain"] {
         class SerpSearchIdentity["Search and page rules"] {
-            <<proposed>>
-            +fromInput(url)
-            +checkCurrent(url)
-            +checkNext(href, currentUrl) string
+            <<rules>>
+            +searchIdentity(url)
+            +checkCurrent(url, expectedStart)
+            +checkNext(href, currentUrl, currentStart, visited)
         }
         class SerpCollection["Unique results"] {
-            <<proposed>>
-            +append(results)
-            +results() SerpResult[]
+            <<closure state>>
+            +seen: Set
+            +results: SerpResult[]
         }
         class SerpResult["Result facts"] {
             <<contract>>
@@ -264,7 +263,7 @@ classDiagram
             +createBrowserLoader(options)
             +fetchHtml(url, options)
             +renderHtml(url, options)
-            +renderPages(inputUrl, options) planned
+            +renderPages(inputUrl, options)
         }
         class Cheerio["Cheerio 1.2.0"] {
             <<existing>>
